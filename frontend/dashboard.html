@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Simple Auth</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./assets/css/style.css">
+</head>
+<body>
+    <div class="bg-shape shape1"></div>
+    <div class="bg-shape shape2" style="background: #10b981;"></div>
+    
+    <div class="glass-card dashboard-container text-center" id="dashboardContent" style="display: none;">
+        <h2>Dashboard</h2>
+        <p class="subtitle">You have successfully authenticated</p>
+        
+        <div class="profile-avatar" id="avatarInitial">
+            <!-- Initial will be injected by JS -->
+        </div>
+
+        <div class="user-info">
+            <div class="label">Name</div>
+            <div class="value" id="userName">Loading...</div>
+        </div>
+        
+        <div class="user-info">
+            <div class="label">Email Address</div>
+            <div class="value" id="userEmail">Loading...</div>
+        </div>
+
+        <button class="btn" id="logoutBtn" style="background: var(--error-color);">
+            <span class="btn-text">Sign Out</span>
+        </button>
+    </div>
+
+    <script src="./assets/js/dashboard.js"></script>
+</body>
+</html>
