@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             
             // Show dashboard content
-            dashboardContent.style.display = 'block';
+            dashboardContent.style.display = 'flex';
         } else {
             // Token invalid or expired
             console.warn('Session expired or invalid token');

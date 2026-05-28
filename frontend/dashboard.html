@@ -3,35 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Simple Auth</title>
+    <title>Dashboard - Admin Panel</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./assets/css/style.css">
 </head>
-<body>
+<body class="dashboard-page">
     <div class="bg-shape shape1"></div>
     <div class="bg-shape shape2" style="background: #10b981;"></div>
     
-    <div class="glass-card dashboard-container text-center" id="dashboardContent" style="display: none;">
-        <h2>Dashboard</h2>
-        <p class="subtitle">You have successfully authenticated</p>
-        
-        <div class="profile-avatar" id="avatarInitial">
-            <!-- Initial will be injected by JS -->
-        </div>
+    <div class="dashboard-layout" id="dashboardContent" style="display: none;">
+        <!-- Sidebar -->
+        <aside class="sidebar glass-card">
+            <div class="sidebar-header">
+                <h2>Admin</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="active">Dashboard</a>
+                <a href="#">Orders</a>
+                <a href="#">Products</a>
+                <a href="#">Customers</a>
+            </nav>
+        </aside>
 
-        <div class="user-info">
-            <div class="label">Name</div>
-            <div class="value" id="userName">Loading...</div>
-        </div>
-        
-        <div class="user-info">
-            <div class="label">Email Address</div>
-            <div class="value" id="userEmail">Loading...</div>
-        </div>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Navbar -->
+            <header class="top-navbar glass-card">
+                <div class="navbar-title" style="font-size: 18px; font-weight: 600;">Overview</div>
+                <div class="navbar-user">
+                    <div class="user-info-mini">
+                        <div style="display: flex; flex-direction: column; text-align: right;">
+                            <span id="userName" style="font-weight: 500;">Loading...</span>
+                            <span id="userEmail" style="font-size: 11px; color: var(--text-secondary);"></span>
+                        </div>
+                        <div class="profile-avatar-mini" id="avatarInitial"></div>
+                    </div>
+                    <button class="btn btn-logout" id="logoutBtn">
+                        Sign Out
+                    </button>
+                </div>
+            </header>
 
-        <button class="btn" id="logoutBtn" style="background: var(--error-color);">
-            <span class="btn-text">Sign Out</span>
-        </button>
+            <!-- Dashboard Cards -->
+            <div class="dashboard-cards">
+                <div class="card glass-card">
+                    <h3>Total Orders</h3>
+                    <div class="value">1,284</div>
+                </div>
+                <div class="card glass-card">
+                    <h3>Pending Orders</h3>
+                    <div class="value">42</div>
+                </div>
+                <div class="card glass-card">
+                    <h3>Stock Alert</h3>
+                    <div class="value" style="color: var(--error-color);">5 Items</div>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script src="./assets/js/dashboard.js"></script>
