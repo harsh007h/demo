@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Order - Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./assets/css/style.css">
+</head>
+<body class="dashboard-page">
+    <div class="bg-shape shape1"></div>
+    <div class="bg-shape shape2" style="background: #10b981;"></div>
+    
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar glass-card">
+            <div class="sidebar-header">
+                <h2>Admin</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="party.html">Parties</a>
+                <a href="order.html" class="active">Orders</a>
+                <!-- <a href="#">Products</a>
+                <a href="#">Customers</a> -->
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Navbar -->
+            <header class="top-navbar glass-card">
+                <div class="navbar-title" style="font-size: 18px; font-weight: 600;">Create New Order</div>
+            </header>
+
+            <!-- Order Form -->
+            <div class="glass-card" style="max-width: 1000px; padding: 30px; margin: 0 auto; width: 100%;">
+                <form id="orderForm">
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 30px;">
+                        <!-- Left Column: Customer Details -->
+                        <div>
+                            <h3 style="margin-bottom: 24px; font-size: 18px; font-weight: 600; color: white;">Customer Details</h3>
+                            
+                            <div class="form-group">
+                                <label>Order Date</label>
+                                <input type="date" id="orderDate" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Party Name</label>
+                                <div style="display: flex; gap: 12px;">
+                                    <select id="partyName" required style="flex: 1;">
+                                        <option value="" disabled selected>Select Party</option>
+                                        <!-- Options will be populated dynamically -->
+                                    </select>
+                                    <button type="button" class="btn" style="width: auto; padding: 0 20px; background: #6366f1; border: none; font-weight: 600;">+ Add</button>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col form-group">
+                                    <label>State</label>
+                                    <input type="text" id="state" required placeholder="State">
+                                </div>
+                                <div class="col form-group">
+                                    <label>City</label>
+                                    <input type="text" id="city" required placeholder="City">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col form-group">
+                                    <label>Pincode</label>
+                                    <input type="text" id="pincode" required placeholder="Pincode">
+                                </div>
+                                <div class="col form-group">
+                                    <label>Address</label>
+                                    <input type="text" id="address" required placeholder="Full Address">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Transport & Payment -->
+                        <div>
+                            <h3 style="margin-bottom: 24px; font-size: 18px; font-weight: 600; color: white;">Transport & Payment</h3>
+                            
+                            <div class="form-group">
+                                <label>Transport Name</label>
+                                <input type="text" id="transportName" placeholder="Select Transport / Enter Name">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Mobile Number</label>
+                                <input type="text" id="mobile" required placeholder="Mobile Number">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Payment Method</label>
+                                <select id="paymentMethod" required>
+                                    <option value="Cash" selected>Cash</option>
+                                    <option value="UPI">UPI</option>
+                                    <option value="Bank Transfer">Bank Transfer</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select id="status" required>
+                                    <option value="Pending" selected>Pending</option>
+                                    <option value="In Review">In Review</option>
+                                    <option value="Bill Sent">Bill Sent</option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="height: 1px; background: rgba(255,255,255,0.1); margin-bottom: 30px;"></div>
+
+                    <!-- Product Details Section -->
+                    <div>
+                        <h3 style="margin-bottom: 20px; font-size: 18px; font-weight: 600; color: white;">Product Details</h3>
+                        
+                        <div id="productList">
+                            <!-- Initial Product Row -->
+                            <div class="product-row" style="display: flex; gap: 16px; margin-bottom: 16px; align-items: center;">
+                                <div style="flex: 2;">
+                                    <input type="text" class="serialNo" required placeholder="Serial No" style="margin-bottom: 0;">
+                                </div>
+                                <div style="flex: 1;">
+                                    <select class="size" required style="margin-bottom: 0;">
+                                        <option value="M" selected>M</option>
+                                        <option value="L">L</option>
+                                        <option value="XL">XL</option>
+                                        <option value="XXL">XXL</option>
+                                    </select>
+                                </div>
+                                <div style="flex: 1;">
+                                    <input type="number" class="pieces" required value="1" min="1" style="margin-bottom: 0;">
+                                </div>
+                                <div>
+                                    <button type="button" class="btn remove-product-btn" style="background: #ef4444; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: bold; border: none; flex-shrink: 0;">X</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="button" id="addProductBtn" class="btn" style="width: auto; padding: 10px 20px; background: #6366f1; border: none; font-weight: 600; font-size: 14px; margin-top: 8px; border-radius: 8px;">+ Add Product</button>
+                    </div>
+
+                    <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 30px 0;"></div>
+
+                    <!-- Additional Notes -->
+                    <div class="form-group">
+                        <label>Additional Notes</label>
+                        <textarea id="notes" placeholder="Enter any additional notes here..." style="min-height: 100px; resize: vertical;"></textarea>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="row" style="margin-top: 30px; gap: 16px;">
+                        <div class="col">
+                            <button type="submit" class="btn" id="saveOrderBtn">
+                                <span class="btn-text">Save</span>
+                                <span class="loader"></span>
+                            </button>
+                        </div>
+                        <div class="col">
+                            <button type="button" class="btn" id="printOrderBtn" style="background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border);">
+                                <span class="btn-text">Print</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="./assets/js/order.js"></script>
+</body>
+</html>
