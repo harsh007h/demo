@@ -1,0 +1,122 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+use App\Models\Order;
+use App\Models\OrderItem;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Arr;
+
+class OrderController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $orders = Order::with(['party', 'items'])->orderBy('id', 'desc')->paginate(10);
+        return response()->json($orders);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'order_date' => 'required|date',
+            'party_id' => 'required|exists:parties,id',
+            'transport_name' => 'required|string',
+            'transport_number' => 'nullable|string',
+            'payment_method' => 'required|string',
+            'status' => 'required|string',
+            'notes' => 'nullable|string',
+            'products' => 'required|array|min:1',
+            'products.*.serial_no' => 'required|string',
+            'products.*.size' => 'required|string',
+            'products.*.pieces' => 'required|integer|min:1',
+        ]);
+
+        return DB::transaction(function () use ($validated) {
+            $order = Order::create(Arr::except($validated, ['products']));
+            foreach ($validated['products'] as $product) {
+                $order->items()->create([
+                    'serial_no' => $product['serial_no'],
+                    'size' => $product['size'],
+                    'pieces' => $product['pieces'],
+                ]);
+            }
+            return response()->json($order->load('items'), 201);
+        });
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(string $id)
+    {
+        $order = Order::with(['party', 'items'])->find($id);
+        if (!$order) {
+            return response()->json(['message' => 'Order not found'], 404);
+        }
+        return response()->json($order);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        $order = Order::find($id);
+        if (!$order) {
+            return response()->json(['message' => 'Order not found'], 404);
+        }
+
+        $validated = $request->validate([
+            'order_date' => 'sometimes|required|date',
+            'party_id' => 'sometimes|required|exists:parties,id',
+            'transport_name' => 'sometimes|required|string',
+            'transport_number' => 'nullable|string',
+            'payment_method' => 'sometimes|required|string',
+            'status' => 'sometimes|required|string',
+            'notes' => 'nullable|string',
+            'products' => 'sometimes|required|array|min:1',
+            'products.*.serial_no' => 'required|string',
+            'products.*.size' => 'required|string',
+            'products.*.pieces' => 'required|integer|min:1',
+        ]);
+
+        return DB::transaction(function () use ($order, $validated) {
+            $order->update(Arr::except($validated, ['products']));
+
+            if (isset($validated['products'])) {
+                $order->items()->delete();
+                foreach ($validated['products'] as $product) {
+                    $order->items()->create([
+                        'serial_no' => $product['serial_no'],
+                        'size' => $product['size'],
+                        'pieces' => $product['pieces'],
+                    ]);
+                }
+            }
+
+            return response()->json($order->load('items'));
+        });
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        $order = Order::find($id);
+        if (!$order) {
+            return response()->json(['message' => 'Order not found'], 404);
+        }
+        $order->delete();
+        return response()->json(['message' => 'Order deleted successfully']);
+    }
+}
