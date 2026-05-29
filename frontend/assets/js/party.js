@@ -1,5 +1,7 @@
 const API_URL = 'http://127.0.0.1:8000/api';
 let parties = [];
+let currentPage = 1;
+let currentSearch = '';
 const token = localStorage.getItem('api_token');
 
 // Redirect to login if no token
@@ -22,6 +24,9 @@ const partyModal = document.getElementById('partyModal');
 const closeModal = document.getElementById('closeModal');
 const partyForm = document.getElementById('partyForm');
 const modalTitle = document.getElementById('modalTitle');
+const paginationContainer = document.getElementById('paginationContainer');
+const toastContainer = document.getElementById('toastContainer');
+const savePartyBtn = document.getElementById('savePartyBtn');
 
 // Form Fields
 const partyIdInput = document.getElementById('partyId');
@@ -32,19 +37,73 @@ const cityInput = document.getElementById('city');
 const pincodeInput = document.getElementById('pincode');
 const addressInput = document.getElementById('address');
 
+// Utility: Toast Notifications
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    // Icon based on type
+    const icon = type === 'success' ? '✓' : '⚠';
+    
+    toast.innerHTML = `
+        <div style="font-size: 18px; font-weight: bold;">${icon}</div>
+        <div>${message}</div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // Trigger animation
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }, 3000);
+}
+
+// Utility: Button Loading State
+function setLoading(btnElement, isLoading) {
+    if (isLoading) {
+        btnElement.classList.add('loading');
+        btnElement.disabled = true;
+    } else {
+        btnElement.classList.remove('loading');
+        btnElement.disabled = false;
+    }
+}
+
 // Fetch and Render Table
-async function loadParties() {
+async function loadParties(page = 1, search = '') {
     try {
-        const response = await fetch(`${API_URL}/parties`, { headers });
+        setLoading(searchPartyBtn, true);
+        
+        let url = `${API_URL}/parties?page=${page}`;
+        if (search) {
+            url += `&search=${encodeURIComponent(search)}`;
+        }
+
+        const response = await fetch(url, { headers });
         if (response.ok) {
-            parties = await response.json();
+            const data = await response.json();
+            parties = data.data; // paginated items
             renderTable(parties);
+            renderPagination(data);
         } else if (response.status === 401) {
             localStorage.removeItem('api_token');
             window.location.href = 'login.html';
+        } else {
+            showToast('Failed to load parties', 'error');
         }
     } catch (error) {
         console.error('Error fetching parties:', error);
+        showToast('Network error while loading parties', 'error');
+    } finally {
+        setLoading(searchPartyBtn, false);
     }
 }
 
@@ -65,11 +124,51 @@ function renderTable(data) {
             <td>${party.state}</td>
             <td>
                 <button class="btn-icon edit-btn" onclick="openEditModal(${party.id})">Edit</button>
-                <button class="btn-icon delete-btn" onclick="deleteParty(${party.id})">Delete</button>
+                <button class="btn-icon delete-btn" id="delBtn_${party.id}" onclick="deleteParty(${party.id})">Delete</button>
             </td>
         `;
         partyTableBody.appendChild(tr);
     });
+}
+
+function renderPagination(meta) {
+    paginationContainer.innerHTML = '';
+    
+    if (meta.last_page <= 1) return;
+
+    // Previous Button
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'page-btn';
+    prevBtn.textContent = 'Prev';
+    prevBtn.disabled = meta.current_page === 1;
+    prevBtn.onclick = () => {
+        currentPage = meta.current_page - 1;
+        loadParties(currentPage, currentSearch);
+    };
+    paginationContainer.appendChild(prevBtn);
+
+    // Page Numbers (simplified, showing all for now)
+    for (let i = 1; i <= meta.last_page; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `page-btn ${meta.current_page === i ? 'active' : ''}`;
+        pageBtn.textContent = i;
+        pageBtn.onclick = () => {
+            currentPage = i;
+            loadParties(currentPage, currentSearch);
+        };
+        paginationContainer.appendChild(pageBtn);
+    }
+
+    // Next Button
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'page-btn';
+    nextBtn.textContent = 'Next';
+    nextBtn.disabled = meta.current_page === meta.last_page;
+    nextBtn.onclick = () => {
+        currentPage = meta.current_page + 1;
+        loadParties(currentPage, currentSearch);
+    };
+    paginationContainer.appendChild(nextBtn);
 }
 
 // Open Modal for Add
@@ -105,37 +204,63 @@ window.openEditModal = (id) => {
 // Delete Party
 window.deleteParty = async (id) => {
     if (confirm('Are you sure you want to delete this party?')) {
+        const delBtn = document.getElementById(`delBtn_${id}`);
+        if(delBtn) delBtn.disabled = true; // basic loading state for delete
+
         try {
             const response = await fetch(`${API_URL}/parties/${id}`, {
                 method: 'DELETE',
                 headers
             });
             if (response.ok || response.status === 204) {
-                parties = parties.filter(p => p.id !== id);
-                renderTable(parties);
+                showToast('Party deleted successfully!', 'success');
+                loadParties(currentPage, currentSearch);
             } else {
-                alert('Failed to delete party.');
+                showToast('Failed to delete party.', 'error');
+                if(delBtn) delBtn.disabled = false;
             }
         } catch (error) {
             console.error('Error deleting party:', error);
+            showToast('Network error while deleting.', 'error');
+            if(delBtn) delBtn.disabled = false;
         }
     }
 };
+
+// Form Validation
+function validateForm() {
+    const mobileRegex = /^[0-9]{10}$/;
+    if (!mobileRegex.test(mobileInput.value.trim())) {
+        showToast('Mobile number must be exactly 10 digits.', 'error');
+        return false;
+    }
+
+    const pincodeRegex = /^[0-9]{6}$/;
+    if (!pincodeRegex.test(pincodeInput.value.trim())) {
+        showToast('Pincode must be exactly 6 digits.', 'error');
+        return false;
+    }
+
+    return true;
+}
 
 // Handle Form Submit (Add/Edit)
 partyForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
+    if (!validateForm()) return;
+
     const partyData = {
-        name: partyNameInput.value,
-        mobile: mobileInput.value,
-        state: stateInput.value,
-        city: cityInput.value,
-        pincode: pincodeInput.value,
-        address: addressInput.value
+        name: partyNameInput.value.trim(),
+        mobile: mobileInput.value.trim(),
+        state: stateInput.value.trim(),
+        city: cityInput.value.trim(),
+        pincode: pincodeInput.value.trim(),
+        address: addressInput.value.trim()
     };
     
     const editId = partyIdInput.value;
+    setLoading(savePartyBtn, true);
     
     try {
         let response;
@@ -156,39 +281,27 @@ partyForm.addEventListener('submit', async (e) => {
         }
 
         if (response.ok || response.status === 201) {
-            const savedParty = await response.json();
-            
-            if (editId) {
-                parties = parties.map(p => p.id === parseInt(editId) ? savedParty : p);
-            } else {
-                parties.push(savedParty);
-            }
-            
+            showToast(editId ? 'Party updated successfully!' : 'Party added successfully!', 'success');
             partyModal.classList.remove('show');
-            renderTable(parties);
+            loadParties(currentPage, currentSearch); // reload current page
         } else {
             const errorData = await response.json();
             console.error('Validation Error:', errorData);
-            alert('Failed to save party. Check console for details.');
+            showToast(errorData.message || 'Failed to save party.', 'error');
         }
     } catch (error) {
         console.error('Error saving party:', error);
+        showToast('Network error while saving.', 'error');
+    } finally {
+        setLoading(savePartyBtn, false);
     }
 });
 
 // Search functionality
 function handleSearch() {
-    const searchTerm = searchPartyInput.value.toLowerCase().trim();
-    if (!searchTerm) {
-        renderTable(parties);
-        return;
-    }
-    
-    const filteredParties = parties.filter(p => 
-        p.name.toLowerCase().includes(searchTerm) || 
-        p.mobile.includes(searchTerm)
-    );
-    renderTable(filteredParties);
+    currentSearch = searchPartyInput.value.trim();
+    currentPage = 1; // reset to first page on new search
+    loadParties(currentPage, currentSearch);
 }
 
 searchPartyBtn.addEventListener('click', handleSearch);
@@ -199,4 +312,6 @@ searchPartyInput.addEventListener('keyup', (e) => {
 });
 
 // Initial Load
-document.addEventListener('DOMContentLoaded', loadParties);
+document.addEventListener('DOMContentLoaded', () => {
+    loadParties(currentPage, currentSearch);
+});

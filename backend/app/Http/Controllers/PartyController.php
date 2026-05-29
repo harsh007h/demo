@@ -8,9 +8,17 @@ use App\Models\Party;
 
 class PartyController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Party::all());
+        $query = Party::query();
+        
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('mobile', 'LIKE', "%{$search}%");
+        }
+        
+        return response()->json($query->orderBy('id', 'desc')->paginate(10));
     }
 
     public function store(Request $request)

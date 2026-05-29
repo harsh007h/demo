@@ -32,14 +32,19 @@
             <header class="top-navbar glass-card">
                 <div class="navbar-title" style="font-size: 18px; font-weight: 600;">Party Management</div>
                 <div class="navbar-user">
-                    <button class="btn" id="addPartyBtn" style="width: auto; margin-top: 0; padding: 10px 20px;">+ Add Party</button>
+                    <button class="btn" id="addPartyBtn" style="width: auto; margin-top: 0; padding: 10px 20px;">
+                        <span class="btn-text">+ Add Party</span>
+                    </button>
                 </div>
             </header>
 
             <!-- Search and Filter -->
             <div class="glass-card" style="max-width: none; padding: 20px; display: flex; gap: 16px; margin-bottom: 24px;">
                 <input type="text" id="searchPartyInput" placeholder="Search Party by Name or Mobile..." style="flex: 1;">
-                <button class="btn" id="searchPartyBtn" style="width: auto; margin-top: 0; padding: 0 24px;">Search</button>
+                <button class="btn" id="searchPartyBtn" style="width: auto; margin-top: 0; padding: 0 24px;">
+                    <span class="btn-text">Search</span>
+                    <span class="loader"></span>
+                </button>
             </div>
 
             <!-- Table -->
@@ -58,6 +63,9 @@
                         <!-- Data populated by JS -->
                     </tbody>
                 </table>
+                <div id="paginationContainer" class="pagination-container">
+                    <!-- Pagination populated by JS -->
+                </div>
             </div>
         </main>
     </div>
@@ -102,10 +110,16 @@
                     <input type="text" id="address" required placeholder="Full address">
                 </div>
 
-                <button type="submit" class="btn">Save Party</button>
+                <button type="submit" class="btn" id="savePartyBtn">
+                    <span class="btn-text">Save Party</span>
+                    <span class="loader"></span>
+                </button>
             </form>
         </div>
     </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="toast-container"></div>
 
     <script src="./assets/js/party.js"></script>
 </body>
