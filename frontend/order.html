@@ -164,18 +164,14 @@
                     </div>
 
                     <!-- Action Buttons -->
-                    <div class="row" style="margin-top: 30px; gap: 16px;">
-                        <div class="col">
-                            <button type="submit" class="btn" id="saveOrderBtn">
-                                <span class="btn-text">Save</span>
-                                <span class="loader"></span>
-                            </button>
-                        </div>
-                        <div class="col">
-                            <button type="button" class="btn" id="printOrderBtn" style="background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border);">
-                                <span class="btn-text">Print</span>
-                            </button>
-                        </div>
+                    <div style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 16px;">
+                        <button type="button" class="btn" id="printOrderBtn" style="width: auto; padding: 10px 30px; background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); margin-top: 0;">
+                            <span class="btn-text">Print</span>
+                        </button>
+                        <button type="submit" class="btn" id="saveOrderBtn" style="width: auto; padding: 10px 30px; margin-top: 0;">
+                            <span class="btn-text">Save</span>
+                            <span class="loader"></span>
+                        </button>
                     </div>
 
                 </form>
