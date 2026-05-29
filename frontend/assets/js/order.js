@@ -25,8 +25,16 @@ const printOrderBtn = document.getElementById('printOrderBtn');
 const toastContainer = document.getElementById('toastContainer');
 const addPartyRedirectBtn = document.getElementById('addPartyRedirectBtn');
 
-// Set default date to today
-document.getElementById('orderDate').valueAsDate = new Date();
+// Set default date and minimum date to today
+const today = new Date();
+const dateInput = document.getElementById('orderDate');
+dateInput.valueAsDate = today;
+
+// Format today's date as YYYY-MM-DD for the min attribute
+const yyyy = today.getFullYear();
+const mm = String(today.getMonth() + 1).padStart(2, '0');
+const dd = String(today.getDate()).padStart(2, '0');
+dateInput.min = `${yyyy}-${mm}-${dd}`;
 
 let parties = [];
 

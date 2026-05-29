@@ -109,7 +109,7 @@ label {
   transition: color 0.3s ease;
 }
 
-input {
+input, select, textarea {
   width: 100%;
   padding: 14px 16px;
   background: rgba(0, 0, 0, 0.2);
@@ -121,14 +121,25 @@ input {
   outline: none;
 }
 
-input:focus {
+input:focus, select:focus, textarea:focus {
   border-color: var(--primary-color);
   background: rgba(0, 0, 0, 0.4);
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
 }
 
-input:focus + label {
+input:focus + label, select:focus + label, textarea:focus + label {
   color: var(--primary-color);
+}
+
+select option {
+  background: var(--bg-gradient-end);
+  color: white;
+}
+
+/* Make date picker icon white */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
 }
 
 /* Button Styles */
