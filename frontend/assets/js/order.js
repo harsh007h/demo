@@ -23,6 +23,7 @@ const addressInput = document.getElementById('address');
 const saveOrderBtn = document.getElementById('saveOrderBtn');
 const printOrderBtn = document.getElementById('printOrderBtn');
 const toastContainer = document.getElementById('toastContainer');
+const addPartyRedirectBtn = document.getElementById('addPartyRedirectBtn');
 
 // Set default date to today
 document.getElementById('orderDate').valueAsDate = new Date();
@@ -111,6 +112,13 @@ partyNameSelect.addEventListener('change', (e) => {
         addressInput.value = '';
     }
 });
+
+// Redirect to add party page in a new tab
+if (addPartyRedirectBtn) {
+    addPartyRedirectBtn.addEventListener('click', () => {
+        window.open('party.html', '_blank');
+    });
+}
 
 // Dynamic Products Logic
 const addProductBtn = document.getElementById('addProductBtn');
