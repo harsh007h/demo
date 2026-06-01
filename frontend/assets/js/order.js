@@ -304,16 +304,35 @@ if (addPartyRedirectBtn) {
 }
 
 // Fetch available stock levels from Stock module
-async function loadAvailableStocks() {
-    try {
-        const response = await fetch(`${API_URL}/stocks?per_page=100`, { headers });
-        if (response.ok) {
-            const data = await response.json();
-            availableStocks = data.data || [];
-        }
-    } catch (error) {
-        console.error('Error fetching available stocks:', error);
+let stocksPromise = null;
+function loadAvailableStocks(forceRefresh = false) {
+    if (stocksPromise && !forceRefresh) {
+        return stocksPromise;
     }
+    stocksPromise = (async () => {
+        try {
+            const response = await fetch(`${API_URL}/stocks?per_page=100`, { headers });
+            if (response.ok) {
+                const data = await response.json();
+                availableStocks = data.data || [];
+                // Update dropdown options if they are already rendered in the modal
+                updateProductDropdowns();
+            }
+        } catch (error) {
+            console.error('Error fetching available stocks:', error);
+        }
+        return availableStocks;
+    })();
+    return stocksPromise;
+}
+
+// Update visible product dropdowns in the modal
+function updateProductDropdowns() {
+    const selects = productList.querySelectorAll('.serialNo');
+    selects.forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = getProductOptionHTML(currentValue);
+    });
 }
 
 // Generate product options dynamically from Stock module
@@ -569,11 +588,11 @@ function resetOrderForm() {
 }
 
 // Open Modal for Add
-addOrderBtn.addEventListener('click', async () => {
+addOrderBtn.addEventListener('click', () => {
     modalTitle.textContent = 'Create New Order';
     // Hide edit-only fields when creating a new order
     document.querySelectorAll('.edit-only-field').forEach(el => el.style.display = 'none');
-    await loadAvailableStocks();
+    loadAvailableStocks(true);
     resetOrderForm();
     orderModal.classList.add('show');
 });
@@ -584,7 +603,7 @@ closeModal.addEventListener('click', () => {
 });
 
 // Open Modal for Edit
-window.openEditModal = async (id) => {
+window.openEditModal = (id) => {
     const order = orders.find(o => o.id === id);
     if (!order) return;
     
@@ -595,7 +614,7 @@ window.openEditModal = async (id) => {
     // Show edit-only fields when editing an order
     document.querySelectorAll('.edit-only-field').forEach(el => el.style.display = 'block');
     
-    await loadAvailableStocks();
+    loadAvailableStocks(true);
     
     modalTitle.textContent = 'Edit Order';
     orderIdInput.value = order.id;
@@ -829,14 +848,18 @@ resetFilterBtn.addEventListener('click', () => {
 });
 
 // Initial Setup
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
     // Hide User Management for Staff
     const userRole = localStorage.getItem('user_role');
     if (userRole !== 'Admin') {
         const userNav = document.querySelectorAll('.sidebar-nav a[href="user.html"]');
         userNav.forEach(el => el.remove());
     }
-    loadParties();
-    await loadAvailableStocks();
-    loadOrders(currentPage, currentSearch, currentStatus);
+    
+    // Load orders first to render the table instantly
+    loadOrders(currentPage, currentSearch, currentStatus).finally(() => {
+        // Load dropdown datasets in the background only AFTER the table renders
+        loadParties();
+        loadAvailableStocks();
+    });
 });
