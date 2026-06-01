@@ -9,11 +9,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Hide User Management for Staff
+    // Role-based UI Customization
     const userRole = localStorage.getItem('user_role');
     if (userRole !== 'Admin') {
-        const userNav = document.querySelectorAll('.sidebar-nav a[href="user.html"]');
-        userNav.forEach(el => el.remove());
+        // Change sidebar header to User Panel
+        const sidebarHeader = document.querySelector('.sidebar-header h2');
+        if (sidebarHeader) sidebarHeader.textContent = 'User Panel';
+
+        // Hide unauthorized sidebar navigation options
+        const unauthorizedNavs = document.querySelectorAll('.sidebar-nav a[href="party.html"], .sidebar-nav a[href="stock.html"], .sidebar-nav a[href="user.html"]');
+        unauthorizedNavs.forEach(el => el.remove());
+
+        // Hide unauthorized dashboard cards (Stock Alert and Total Parties)
+        const stockAlertCard = document.querySelector('.dashboard-cards a[href="stock.html"]');
+        if (stockAlertCard) stockAlertCard.style.display = 'none';
+
+        const totalPartiesCard = document.querySelector('.dashboard-cards a[href="party.html"]');
+        if (totalPartiesCard) totalPartiesCard.style.display = 'none';
+
+        // Hide Low Stock Details card
+        const lowStockDetailsContainer = document.getElementById('lowStockDetailsContainer');
+        if (lowStockDetailsContainer) {
+            const parentCard = lowStockDetailsContainer.closest('.glass-card');
+            if (parentCard) parentCard.style.display = 'none';
+        }
+
+        // Adjust layout grid: expand Recent Orders to full width (1fr)
+        const dashboardGrid = document.querySelector('.dashboard-grid');
+        if (dashboardGrid) {
+            dashboardGrid.style.gridTemplateColumns = '1fr';
+        }
     }
 
     const dashboardContent = document.getElementById('dashboardContent');

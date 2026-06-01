@@ -3,10 +3,17 @@ let stocks = [];
 let currentPage = 1;
 let currentSearch = '';
 const token = localStorage.getItem('api_token');
+const userRole = localStorage.getItem('user_role');
 
 // Redirect to login if no token
 if (!token) {
     window.location.href = 'login.html';
+}
+
+// Redirect to dashboard if user is not Admin
+if (userRole !== 'Admin') {
+    alert('Access denied. Staff cannot access Stock Management.');
+    window.location.href = 'dashboard.html';
 }
 
 const headers = {

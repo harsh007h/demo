@@ -882,11 +882,20 @@ resetFilterBtn.addEventListener('click', () => {
 
 // Initial Setup
 document.addEventListener('DOMContentLoaded', () => {
-    // Hide User Management for Staff
+    // Role-based UI Customization
     const userRole = localStorage.getItem('user_role');
     if (userRole !== 'Admin') {
-        const userNav = document.querySelectorAll('.sidebar-nav a[href="user.html"]');
-        userNav.forEach(el => el.remove());
+        // Change sidebar header to User Panel
+        const sidebarHeader = document.querySelector('.sidebar-header h2');
+        if (sidebarHeader) sidebarHeader.textContent = 'User Panel';
+
+        // Hide unauthorized sidebar navigation options
+        const unauthorizedNavs = document.querySelectorAll('.sidebar-nav a[href="party.html"], .sidebar-nav a[href="stock.html"], .sidebar-nav a[href="user.html"]');
+        unauthorizedNavs.forEach(el => el.remove());
+
+        // Hide '+ Add' party redirect button in the order modal
+        const addPartyRedirectBtn = document.getElementById('addPartyRedirectBtn');
+        if (addPartyRedirectBtn) addPartyRedirectBtn.style.display = 'none';
     }
     
     // Load orders first to render the table instantly
