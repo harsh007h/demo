@@ -1,0 +1,27 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Stock extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'product_size',
+        'quantity'
+    ];
+
+    /**
+     * Get visual status/alert for this stock item.
+     * Threshold is below 10.
+     */
+    protected $appends = ['is_low_stock'];
+
+    public function getIsLowStockAttribute(): bool
+    {
+        return $this->quantity < 10;
+    }
+}

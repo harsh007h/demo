@@ -67,6 +67,13 @@ class OrderController extends Controller
                     'size' => $product['size'],
                     'pieces' => $product['pieces'],
                 ]);
+
+                // Decrement stock quantity
+                $stock = \App\Models\Stock::where('product_size', $product['size'])->first();
+                if ($stock) {
+                    $stock->quantity = max(0, $stock->quantity - $product['pieces']);
+                    $stock->save();
+                }
             }
             return response()->json($order->load('items'), 201);
         });
@@ -89,7 +96,7 @@ class OrderController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $order = Order::find($id);
+        $order = Order::with('items')->find($id);
         if (!$order) {
             return response()->json(['message' => 'Order not found'], 404);
         }
@@ -109,6 +116,15 @@ class OrderController extends Controller
         ]);
 
         return DB::transaction(function () use ($order, $validated) {
+            // Restore stock levels from previous order items
+            foreach ($order->items as $item) {
+                $stock = \App\Models\Stock::where('product_size', $item->size)->first();
+                if ($stock) {
+                    $stock->quantity += $item->pieces;
+                    $stock->save();
+                }
+            }
+
             $order->update(Arr::except($validated, ['products']));
 
             if (isset($validated['products'])) {
@@ -119,6 +135,22 @@ class OrderController extends Controller
                         'size' => $product['size'],
                         'pieces' => $product['pieces'],
                     ]);
+
+                    // Deduct stock levels for updated order items
+                    $stock = \App\Models\Stock::where('product_size', $product['size'])->first();
+                    if ($stock) {
+                        $stock->quantity = max(0, $stock->quantity - $product['pieces']);
+                        $stock->save();
+                    }
+                }
+            } else {
+                // If products were not updated, re-apply deductions to stay balanced
+                foreach ($order->items as $item) {
+                    $stock = \App\Models\Stock::where('product_size', $item->size)->first();
+                    if ($stock) {
+                        $stock->quantity = max(0, $stock->quantity - $item->pieces);
+                        $stock->save();
+                    }
                 }
             }
 
@@ -131,11 +163,23 @@ class OrderController extends Controller
      */
     public function destroy(string $id)
     {
-        $order = Order::find($id);
+        $order = Order::with('items')->find($id);
         if (!$order) {
             return response()->json(['message' => 'Order not found'], 404);
         }
-        $order->delete();
+
+        DB::transaction(function () use ($order) {
+            // Restore stock quantities
+            foreach ($order->items as $item) {
+                $stock = \App\Models\Stock::where('product_size', $item->size)->first();
+                if ($stock) {
+                    $stock->quantity += $item->pieces;
+                    $stock->save();
+                }
+            }
+            $order->delete();
+        });
+
         return response()->json(['message' => 'Order deleted successfully']);
     }
 }

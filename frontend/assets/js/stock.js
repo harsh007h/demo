@@ -1,0 +1,340 @@
+const API_URL = 'http://127.0.0.1:8000/api';
+let stocks = [];
+let currentPage = 1;
+let currentSearch = '';
+const token = localStorage.getItem('api_token');
+
+// Redirect to login if no token
+if (!token) {
+    window.location.href = 'login.html';
+}
+
+const headers = {
+    'Authorization': `Bearer ${token}`,
+    'Accept': 'application/json',
+    'Content-Type': 'application/json'
+};
+
+// DOM Elements
+const stockTableBody = document.getElementById('stockTableBody');
+const searchStockInput = document.getElementById('searchStockInput');
+const searchStockBtn = document.getElementById('searchStockBtn');
+const addStockBtn = document.getElementById('addStockBtn');
+const stockModal = document.getElementById('stockModal');
+const closeModal = document.getElementById('closeModal');
+const stockForm = document.getElementById('stockForm');
+const modalTitle = document.getElementById('modalTitle');
+const paginationContainer = document.getElementById('paginationContainer');
+const toastContainer = document.getElementById('toastContainer');
+const saveStockBtn = document.getElementById('saveStockBtn');
+const lowStockBanner = document.getElementById('lowStockBanner');
+const lowStockBannerText = document.getElementById('lowStockBannerText');
+const dismissBanner = document.getElementById('dismissBanner');
+const logoutBtn = document.getElementById('logoutBtn');
+
+// Form Fields
+const stockIdInput = document.getElementById('stockId');
+const productSizeInput = document.getElementById('productSize');
+const quantityInput = document.getElementById('quantity');
+
+// Utility: Toast Notifications
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icon = type === 'success' ? '✓' : '⚠';
+    
+    toast.innerHTML = `
+        <div style="font-size: 18px; font-weight: bold;">${icon}</div>
+        <div>${message}</div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }, 3000);
+}
+
+// Utility: Button Loading State
+function setLoading(btnElement, isLoading) {
+    if (!btnElement) return;
+    if (isLoading) {
+        btnElement.classList.add('loading');
+        btnElement.disabled = true;
+    } else {
+        btnElement.classList.remove('loading');
+        btnElement.disabled = false;
+    }
+}
+
+// Fetch and Check Stats for Low Stock Alerts
+async function checkStats() {
+    try {
+        const response = await fetch(`${API_URL}/stocks/stats`, { headers });
+        if (response.ok) {
+            const stats = await response.json();
+            if (stats.low_stock_count > 0) {
+                lowStockBannerText.textContent = `Warning: There are ${stats.low_stock_count} item(s) running low on stock (Quantity < 10)!`;
+                lowStockBanner.classList.add('show');
+            } else {
+                lowStockBanner.classList.remove('show');
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching stock stats:', error);
+    }
+}
+
+// Fetch and Render Table
+async function loadStocks(page = 1, search = '') {
+    try {
+        setLoading(searchStockBtn, true);
+        
+        let url = `${API_URL}/stocks?page=${page}`;
+        if (search) {
+            url += `&search=${encodeURIComponent(search)}`;
+        }
+
+        const response = await fetch(url, { headers });
+        if (response.ok) {
+            const data = await response.json();
+            stocks = data.data; // paginated items
+            renderTable(stocks);
+            renderPagination(data);
+            await checkStats(); // Check stats dynamically on each load
+        } else if (response.status === 401) {
+            localStorage.removeItem('api_token');
+            window.location.href = 'login.html';
+        } else {
+            showToast('Failed to load stocks', 'error');
+        }
+    } catch (error) {
+        console.error('Error fetching stocks:', error);
+        showToast('Network error while loading stocks', 'error');
+    } finally {
+        setLoading(searchStockBtn, false);
+    }
+}
+
+function renderTable(data) {
+    stockTableBody.innerHTML = '';
+    
+    if (data.length === 0) {
+        stockTableBody.innerHTML = `<tr><td colspan="4" class="text-center">No stock records found</td></tr>`;
+        return;
+    }
+    
+    data.forEach(stock => {
+        const tr = document.createElement('tr');
+        const isLow = stock.quantity < 10;
+        const statusBadge = isLow 
+            ? `<span class="status-badge status-low">Low Stock</span>`
+            : `<span class="status-badge status-ok">In Stock</span>`;
+            
+        tr.innerHTML = `
+            <td><strong>${stock.product_size}</strong></td>
+            <td>
+                <span style="font-size: 16px; font-weight: 600; color: ${isLow ? 'var(--error-color)' : '#ffffff'}">
+                    ${stock.quantity}
+                </span>
+            </td>
+            <td>${statusBadge}</td>
+            <td>
+                <button class="btn-icon edit-btn" onclick="openEditModal(${stock.id})">Edit</button>
+                <button class="btn-icon delete-btn" id="delBtn_${stock.id}" onclick="deleteStock(${stock.id})">Delete</button>
+            </td>
+        `;
+        stockTableBody.appendChild(tr);
+    });
+}
+
+function renderPagination(meta) {
+    paginationContainer.innerHTML = '';
+    
+    if (meta.last_page <= 1) return;
+
+    // Previous Button
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'page-btn';
+    prevBtn.textContent = 'Prev';
+    prevBtn.disabled = meta.current_page === 1;
+    prevBtn.onclick = () => {
+        currentPage = meta.current_page - 1;
+        loadStocks(currentPage, currentSearch);
+    };
+    paginationContainer.appendChild(prevBtn);
+
+    // Page Numbers
+    for (let i = 1; i <= meta.last_page; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `page-btn ${meta.current_page === i ? 'active' : ''}`;
+        pageBtn.textContent = i;
+        pageBtn.onclick = () => {
+            currentPage = i;
+            loadStocks(currentPage, currentSearch);
+        };
+        paginationContainer.appendChild(pageBtn);
+    }
+
+    // Next Button
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'page-btn';
+    nextBtn.textContent = 'Next';
+    nextBtn.disabled = meta.current_page === meta.last_page;
+    nextBtn.onclick = () => {
+        currentPage = meta.current_page + 1;
+        loadStocks(currentPage, currentSearch);
+    };
+    paginationContainer.appendChild(nextBtn);
+}
+
+// Open Modal for Add
+addStockBtn.addEventListener('click', () => {
+    modalTitle.textContent = 'Add New Stock';
+    stockForm.reset();
+    stockIdInput.value = '';
+    productSizeInput.disabled = false; // Allow size typing on creation
+    stockModal.classList.add('show');
+});
+
+// Close Modal
+closeModal.addEventListener('click', () => {
+    stockModal.classList.remove('show');
+});
+
+// Open Modal for Edit
+window.openEditModal = (id) => {
+    const stock = stocks.find(s => s.id === id);
+    if (!stock) return;
+    
+    modalTitle.textContent = 'Edit Stock';
+    stockIdInput.value = stock.id;
+    productSizeInput.value = stock.product_size;
+    productSizeInput.disabled = false; // keep it enabled, or disabled if they shouldn't change sizes. Let's keep it editable.
+    quantityInput.value = stock.quantity;
+    
+    stockModal.classList.add('show');
+};
+
+// Delete Stock
+window.deleteStock = async (id) => {
+    if (confirm('Are you sure you want to delete this stock record?')) {
+        const delBtn = document.getElementById(`delBtn_${id}`);
+        if (delBtn) delBtn.disabled = true;
+
+        try {
+            const response = await fetch(`${API_URL}/stocks/${id}`, {
+                method: 'DELETE',
+                headers
+            });
+            if (response.ok || response.status === 204) {
+                showToast('Stock record deleted successfully!', 'success');
+                loadStocks(currentPage, currentSearch);
+            } else {
+                showToast('Failed to delete stock record.', 'error');
+                if (delBtn) delBtn.disabled = false;
+            }
+        } catch (error) {
+            console.error('Error deleting stock:', error);
+            showToast('Network error while deleting.', 'error');
+            if (delBtn) delBtn.disabled = false;
+        }
+    }
+};
+
+// Handle Form Submit (Add/Edit)
+stockForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const stockData = {
+        product_size: productSizeInput.value.trim(),
+        quantity: parseInt(quantityInput.value)
+    };
+    
+    const editId = stockIdInput.value;
+    setLoading(saveStockBtn, true);
+    
+    try {
+        let response;
+        if (editId) {
+            // Update existing
+            response = await fetch(`${API_URL}/stocks/${editId}`, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify(stockData)
+            });
+        } else {
+            // Add new
+            response = await fetch(`${API_URL}/stocks`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(stockData)
+            });
+        }
+
+        if (response.ok || response.status === 201) {
+            showToast(editId ? 'Stock updated successfully!' : 'Stock added successfully!', 'success');
+            stockModal.classList.remove('show');
+            loadStocks(currentPage, currentSearch);
+        } else {
+            const errorData = await response.json();
+            console.error('Validation Error:', errorData);
+            showToast(errorData.message || 'Failed to save stock.', 'error');
+        }
+    } catch (error) {
+        console.error('Error saving stock:', error);
+        showToast('Network error while saving.', 'error');
+    } finally {
+        setLoading(saveStockBtn, false);
+    }
+});
+
+// Search functionality
+function handleSearch() {
+    currentSearch = searchStockInput.value.trim();
+    currentPage = 1;
+    loadStocks(currentPage, currentSearch);
+}
+
+searchStockBtn.addEventListener('click', handleSearch);
+searchStockInput.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') {
+        handleSearch();
+    }
+});
+
+// Dismiss Low Stock Banner
+dismissBanner.addEventListener('click', () => {
+    lowStockBanner.classList.remove('show');
+});
+
+// Handle Logout
+logoutBtn.addEventListener('click', async () => {
+    try {
+        await fetch(`${API_URL}/logout`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
+        });
+    } catch (error) {
+        console.error('Error logging out:', error);
+    } finally {
+        localStorage.removeItem('api_token');
+        window.location.href = 'login.html';
+    }
+});
+
+// Initial Load
+document.addEventListener('DOMContentLoaded', () => {
+    loadStocks(currentPage, currentSearch);
+});

@@ -15,6 +15,7 @@ const headers = {
 // State Variables
 let parties = [];
 let orders = [];
+let availableStocks = [];
 let currentPage = 1;
 let currentSearch = '';
 let currentStatus = '';
@@ -153,6 +154,45 @@ if (addPartyRedirectBtn) {
     });
 }
 
+// Fetch available stock levels from Stock module
+async function loadAvailableStocks() {
+    try {
+        const response = await fetch(`${API_URL}/stocks?per_page=100`, { headers });
+        if (response.ok) {
+            const data = await response.json();
+            availableStocks = data.data || [];
+        }
+    } catch (error) {
+        console.error('Error fetching available stocks:', error);
+    }
+}
+
+// Generate stock options dynamically with counts
+function getStockOptionHTML(selectedSize = '') {
+    let optionsHTML = '';
+    const sizesToRender = [...availableStocks];
+    
+    // Fallback/standard sizes if not registered in the database
+    const standardSizes = ['M', 'L', 'XL', 'XXL'];
+    standardSizes.forEach(stdSize => {
+        if (!sizesToRender.some(s => s.product_size.toUpperCase() === stdSize.toUpperCase())) {
+            sizesToRender.push({ product_size: stdSize, quantity: 0 });
+        }
+    });
+
+    // Sort sizes logically
+    sizesToRender.sort((a, b) => a.product_size.localeCompare(b.product_size));
+
+    sizesToRender.forEach(stock => {
+        const sizeVal = stock.product_size;
+        const qty = stock.quantity;
+        const isSelected = sizeVal.toUpperCase() === selectedSize.toUpperCase();
+        optionsHTML += `<option value="${sizeVal}" ${isSelected ? 'selected' : ''}>${sizeVal} (${qty} available)</option>`;
+    });
+
+    return optionsHTML;
+}
+
 // Dynamic Products Logic (Add blank row)
 function createBlankProductRow(serial = '', size = 'M', pieces = 1) {
     const row = document.createElement('div');
@@ -165,10 +205,7 @@ function createBlankProductRow(serial = '', size = 'M', pieces = 1) {
         </div>
         <div style="flex: 1;">
             <select class="size" required style="margin-bottom: 0;">
-                <option value="M" ${size === 'M' ? 'selected' : ''}>M</option>
-                <option value="L" ${size === 'L' ? 'selected' : ''}>L</option>
-                <option value="XL" ${size === 'XL' ? 'selected' : ''}>XL</option>
-                <option value="XXL" ${size === 'XXL' ? 'selected' : ''}>XXL</option>
+                ${getStockOptionHTML(size)}
             </select>
         </div>
         <div style="flex: 1;">
@@ -346,8 +383,9 @@ function resetOrderForm() {
 }
 
 // Open Modal for Add
-addOrderBtn.addEventListener('click', () => {
+addOrderBtn.addEventListener('click', async () => {
     modalTitle.textContent = 'Create New Order';
+    await loadAvailableStocks();
     resetOrderForm();
     orderModal.classList.add('show');
 });
@@ -358,9 +396,11 @@ closeModal.addEventListener('click', () => {
 });
 
 // Open Modal for Edit
-window.openEditModal = (id) => {
+window.openEditModal = async (id) => {
     const order = orders.find(o => o.id === id);
     if (!order) return;
+    
+    await loadAvailableStocks();
     
     modalTitle.textContent = 'Edit Order';
     orderIdInput.value = order.id;
@@ -454,13 +494,23 @@ function validateForm() {
     let valid = true;
     rows.forEach(row => {
         const serial = row.querySelector('.serialNo').value.trim();
-        const pieces = row.querySelector('.pieces').value;
+        const pieces = parseInt(row.querySelector('.pieces').value, 10);
+        const sizeSelected = row.querySelector('.size').value;
+        
         if (!serial) {
             showToast('Serial number is required for all product rows.', 'error');
             valid = false;
         }
         if (!pieces || pieces < 1) {
             showToast('Pieces must be greater than or equal to 1.', 'error');
+            valid = false;
+        }
+
+        // Validate stock quantity
+        const stockItem = availableStocks.find(s => s.product_size.toUpperCase() === sizeSelected.toUpperCase());
+        const availableQty = stockItem ? stockItem.quantity : 0;
+        if (pieces > availableQty) {
+            showToast(`Error: Size ${sizeSelected} only has ${availableQty} pieces in stock, but you entered ${pieces}.`, 'error');
             valid = false;
         }
     });
@@ -564,7 +614,8 @@ resetFilterBtn.addEventListener('click', () => {
 });
 
 // Initial Setup
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     loadParties();
+    await loadAvailableStocks();
     loadOrders(currentPage, currentSearch, currentStatus);
 });

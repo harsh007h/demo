@@ -15,6 +15,61 @@ document.addEventListener('DOMContentLoaded', async () => {
     const avatarInitial = document.getElementById('avatarInitial');
     const logoutBtn = document.getElementById('logoutBtn');
 
+    const totalOrdersCount = document.getElementById('totalOrdersCount');
+    const pendingOrdersCount = document.getElementById('pendingOrdersCount');
+    const lowStockCountVal = document.getElementById('lowStockCountVal');
+
+    async function loadStats() {
+        const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+        };
+
+        // Fetch Total Orders
+        try {
+            const res = await fetch(`${API_URL}/orders`, { headers });
+            if (res.ok) {
+                const data = await res.json();
+                totalOrdersCount.textContent = data.total !== undefined ? data.total : 0;
+            } else {
+                totalOrdersCount.textContent = 'Error';
+            }
+        } catch (e) {
+            console.error('Error fetching total orders:', e);
+            totalOrdersCount.textContent = 'Error';
+        }
+
+        // Fetch Pending Orders
+        try {
+            const res = await fetch(`${API_URL}/orders?status=Pending`, { headers });
+            if (res.ok) {
+                const data = await res.json();
+                pendingOrdersCount.textContent = data.total !== undefined ? data.total : 0;
+            } else {
+                pendingOrdersCount.textContent = 'Error';
+            }
+        } catch (e) {
+            console.error('Error fetching pending orders:', e);
+            pendingOrdersCount.textContent = 'Error';
+        }
+
+        // Fetch Stock Alerts
+        try {
+            const res = await fetch(`${API_URL}/stocks/stats`, { headers });
+            if (res.ok) {
+                const data = await res.json();
+                const count = data.low_stock_count !== undefined ? data.low_stock_count : 0;
+                lowStockCountVal.textContent = count > 0 ? `${count} Items` : '0 Items';
+                lowStockCountVal.style.color = count > 0 ? 'var(--error-color)' : '#10b981';
+            } else {
+                lowStockCountVal.textContent = 'Error';
+            }
+        } catch (e) {
+            console.error('Error fetching stock stats:', e);
+            lowStockCountVal.textContent = 'Error';
+        }
+    }
+
     try {
         // Fetch user data
         const response = await fetch(`${API_URL}/user`, {
@@ -39,6 +94,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             // Show dashboard content
             dashboardContent.style.display = 'flex';
+
+            // Load all stats dynamically
+            await loadStats();
         } else {
             // Token invalid or expired
             console.warn('Session expired or invalid token');
