@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,10 +8,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./assets/css/style.css">
 </head>
+
 <body class="dashboard-page">
     <div class="bg-shape shape1"></div>
     <div class="bg-shape shape2" style="background: #10b981;"></div>
-    
+
     <div class="dashboard-layout">
         <!-- Sidebar -->
         <aside class="sidebar glass-card">
@@ -24,10 +26,10 @@
                 <a href="stock.html">Stock Management</a>
                 <a href="user.html">Users</a>
             </nav>
-             <div style="margin-top: auto;">
-            <button class="btn btn-logout" id="logoutBtn">
-                        Log Out
-                    </button>
+            <div style="margin-top: auto;">
+                <button class="btn btn-logout" id="logoutBtn">
+                    Log Out
+                </button>
             </div>
         </aside>
 
@@ -44,16 +46,21 @@
             </header>
 
             <!-- Search and Filter -->
-            <div class="glass-card" style="max-width: none; padding: 20px; display: flex; gap: 16px; margin-bottom: 24px; align-items: center;">
-                <input type="text" id="searchOrderInput" placeholder="Search Order by Party, Transport, Mobile or Notes..." style="flex: 1;">
-                
+            <div class="glass-card"
+                style="max-width: none; padding: 20px; display: flex; gap: 16px; margin-bottom: 24px; align-items: center;">
+                <input type="text" id="searchOrderInput"
+                    placeholder="Search Order by Party, Transport, Mobile or Notes..." style="flex: 1;">
 
-                <button class="btn" id="searchOrderBtn" style="width: auto; margin-top: 0; padding: 0 24px; height: 50px;">
+
+                <button class="btn" id="searchOrderBtn"
+                    style="width: auto; margin-top: 0; padding: 0 24px; height: 50px;">
                     <span class="btn-text">Search</span>
                     <span class="loader"></span>
                 </button>
-                
-                <button class="btn" id="resetFilterBtn" style="width: auto; margin-top: 0; padding: 0 16px; height: 50px; background: rgba(255, 255, 255, 0.1); border: 1px solid var(--glass-border);" title="Reset Filter">
+
+                <button class="btn" id="resetFilterBtn"
+                    style="width: auto; margin-top: 0; padding: 0 16px; height: 50px; background: rgba(255, 255, 255, 0.1); border: 1px solid var(--glass-border);"
+                    title="Reset Filter">
                     <span class="btn-text">⟳</span>
                 </button>
             </div>
@@ -83,11 +90,13 @@
     <!-- Modal for Add/Edit -->
     <div id="orderModal" class="modal-overlay">
         <div class="glass-card modal-content" style="max-width: 900px; width: 100%; margin: 20px; padding: 30px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 16px;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 16px;">
                 <h3 id="modalTitle" style="color: white; font-size: 20px; font-weight: 600;">Create New Order</h3>
-                <button id="closeModal" style="background: none; border: none; color: white; font-size: 28px; cursor: pointer; line-height: 1;">&times;</button>
+                <button id="closeModal"
+                    style="background: none; border: none; color: white; font-size: 28px; cursor: pointer; line-height: 1;">&times;</button>
             </div>
-            
+
             <form id="orderForm">
                 <input type="hidden" id="orderId">
                 <!-- Step 1: Customer Details & Transport Info -->
@@ -98,14 +107,23 @@
                             <div class="form-group">
                                 <label>Party Name</label>
                                 <div style="display: flex; gap: 12px; align-items: center;">
-                                    <select id="partyName" required style="flex: 1; margin-bottom: 0;">
-                                        <option value="" disabled selected>Select Party</option>
-                                        <!-- Options will be populated dynamically -->
-                                    </select>
-                                    <button type="button" id="addPartyRedirectBtn" class="btn" style="width: auto; padding: 14px 24px; background: #6366f1; border: none; font-weight: 600; margin-top: 0; border-radius: 12px; height: 50px; display: flex; align-items: center; justify-content: center;">+ Add</button>
+                                    <div class="searchable-select-wrapper" style="flex: 1;">
+                                        <input type="text" id="partySearchInput"
+                                            placeholder="Search Party by Name or Mobile..."
+                                            style="margin-bottom: 0; padding-right: 40px;" autocomplete="off">
+                                        <span class="select-arrow">▼</span>
+                                        <select id="partyName" required style="display: none;">
+                                            <option value="" disabled selected>Select Party</option>
+                                            <!-- Options will be populated dynamically -->
+                                        </select>
+                                        <div id="partyDropdown" class="custom-dropdown"></div>
+                                    </div>
+                                    <button type="button" id="addPartyRedirectBtn" class="btn"
+                                        style="width: auto; padding: 14px 24px; background: #6366f1; border: none; font-weight: 600; margin-top: 0; border-radius: 12px; height: 50px; display: flex; align-items: center; justify-content: center;">+
+                                        Add</button>
                                 </div>
                             </div>
-                            
+
                             <div class="row" style="display: flex; gap: 16px; margin-bottom: 20px;">
                                 <div class="col form-group" style="flex: 1; margin-bottom: 0;">
                                     <label>State</label>
@@ -139,18 +157,20 @@
                                 <input type="date" id="orderDate" required>
                             </div>
 
-                            <h3 style="margin-bottom: 24px; font-size: 18px; font-weight: 600; color: white;">Transport & Payment</h3>
-                            
+                            <h3 style="margin-bottom: 24px; font-size: 18px; font-weight: 600; color: white;">Transport
+                                & Payment</h3>
+
                             <div class="form-group">
                                 <label>Transport Name</label>
-                                <input type="text" id="transportName" required placeholder="Enter Transport Agency Name">
+                                <input type="text" id="transportName" required
+                                    placeholder="Enter Transport Agency Name">
                             </div>
-                            
+
                             <div class="form-group edit-only-field">
                                 <label>Transport Number</label>
                                 <input type="text" id="transportNumber" placeholder="Vehicle / Transport Number">
                             </div>
-                            
+
                             <div class="form-group">
                                 <label>Payment Method</label>
                                 <select id="paymentMethod" required>
@@ -159,12 +179,13 @@
                                     <option value="Bank Transfer">Bank Transfer</option>
                                 </select>
                             </div>
-                            
+
                         </div>
                     </div>
 
                     <div style="margin-top: 30px; display: flex; justify-content: flex-end;">
-                        <button type="button" class="btn" id="nextStepBtn" style="width: auto; padding: 12px 40px; margin-top: 0; background: #6366f1; border: none; font-weight: 600; border-radius: 12px; display: flex; align-items: center; justify-content: center; height: 50px;">
+                        <button type="button" class="btn" id="nextStepBtn"
+                            style="width: auto; padding: 12px 40px; margin-top: 0; background: #6366f1; border: none; font-weight: 600; border-radius: 12px; display: flex; align-items: center; justify-content: center; height: 50px;">
                             <span class="btn-text">Next</span>
                         </button>
                     </div>
@@ -174,32 +195,40 @@
                 <div id="step2Container" style="display: none;">
                     <!-- Product Details Section -->
                     <div>
-                        <h3 style="margin-bottom: 20px; font-size: 18px; font-weight: 600; color: white;">Product Details</h3>
-                        
+                        <h3 style="margin-bottom: 20px; font-size: 18px; font-weight: 600; color: white;">Product
+                            Details</h3>
+
                         <div id="productList">
                             <!-- Initial Product Row -->
-                            <div class="product-row" style="display: flex; gap: 16px; margin-bottom: 16px; align-items: center;">
+                            <div class="product-row"
+                                style="display: flex; gap: 16px; margin-bottom: 16px; align-items: center;">
                                 <div style="flex: 2;">
-                                    <input type="text" class="serialNo" required placeholder="Serial No" style="margin-bottom: 0;">
+                                    <input type="text" class="serialNo" required placeholder="Serial No"
+                                        style="margin-bottom: 0;">
                                 </div>
                                 <div style="flex: 1;">
                                     <select class="size" required style="margin-bottom: 0;">
-                                        <option value="M" selected>M</option>
+                                        <option value="" disabled selected>Select Size</option>
+                                        <option value="M">M</option>
                                         <option value="L">L</option>
                                         <option value="XL">XL</option>
                                         <option value="XXL">XXL</option>
                                     </select>
                                 </div>
                                 <div style="flex: 1;">
-                                    <input type="number" class="pieces" required value="1" min="1" style="margin-bottom: 0;">
+                                    <input type="number" class="pieces" required placeholder="Pieces" min="1"
+                                        style="margin-bottom: 0;">
                                 </div>
                                 <div>
-                                    <button type="button" class="btn remove-product-btn" style="background: #ef4444; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: bold; border: none; flex-shrink: 0;">X</button>
+                                    <button type="button" class="btn remove-product-btn"
+                                        style="background: #ef4444; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: bold; border: none; flex-shrink: 0;">X</button>
                                 </div>
                             </div>
                         </div>
 
-                        <button type="button" id="addProductBtn" class="btn" style="width: auto; padding: 10px 20px; background: #6366f1; border: none; font-weight: 600; font-size: 14px; margin-top: 8px; border-radius: 8px;">+ Add Product</button>
+                        <button type="button" id="addProductBtn" class="btn"
+                            style="width: auto; padding: 10px 20px; background: #6366f1; border: none; font-weight: 600; font-size: 14px; margin-top: 8px; border-radius: 8px;">+
+                            Add Product</button>
                     </div>
 
                     <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 30px 0;"></div>
@@ -207,18 +236,22 @@
                     <!-- Additional Notes -->
                     <div class="form-group">
                         <label>Additional Notes</label>
-                        <textarea id="notes" placeholder="Enter any additional notes here..." style="min-height: 100px; resize: vertical;"></textarea>
+                        <textarea id="notes" placeholder="Enter any additional notes here..."
+                            style="min-height: 100px; resize: vertical;"></textarea>
                     </div>
 
                     <!-- Action Buttons -->
                     <div style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 16px;">
-                        <button type="button" class="btn" id="prevStepBtn" style="width: auto; padding: 10px 30px; background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); margin-top: 0;">
+                        <button type="button" class="btn" id="prevStepBtn"
+                            style="width: auto; padding: 10px 30px; background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); margin-top: 0;">
                             <span class="btn-text">Back</span>
                         </button>
-                        <button type="button" class="btn" id="printOrderBtn" style="width: auto; padding: 10px 30px; background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); margin-top: 0;">
+                        <button type="button" class="btn" id="printOrderBtn"
+                            style="width: auto; padding: 10px 30px; background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); margin-top: 0;">
                             <span class="btn-text">Print</span>
                         </button>
-                        <button type="submit" class="btn" id="saveOrderBtn" style="width: auto; padding: 10px 30px; margin-top: 0;">
+                        <button type="submit" class="btn" id="saveOrderBtn"
+                            style="width: auto; padding: 10px 30px; margin-top: 0;">
                             <span class="btn-text">Save</span>
                             <span class="loader"></span>
                         </button>
@@ -233,4 +266,5 @@
 
     <script src="./assets/js/order.js"></script>
 </body>
+
 </html>

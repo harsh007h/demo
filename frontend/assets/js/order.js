@@ -14,6 +14,7 @@ const headers = {
 
 // State Variables
 let parties = [];
+let currentFilteredParties = [];
 let orders = [];
 let availableStocks = [];
 let currentPage = 1;
@@ -119,6 +120,9 @@ async function loadParties() {
                 option.textContent = `${party.name} (${party.mobile} - ${party.city})`;
                 partyNameSelect.appendChild(option);
             });
+
+            // Initialize custom searchable dropdown
+            renderCustomPartyDropdown(parties);
         } else if (response.status === 401) {
             localStorage.removeItem('api_token');
             window.location.href = 'login.html';
@@ -126,6 +130,57 @@ async function loadParties() {
     } catch (error) {
         console.error('Error fetching parties:', error);
         showToast('Failed to load party list', 'error');
+    }
+}
+
+// Render Custom Dropdown Items
+function renderCustomPartyDropdown(list) {
+    const partyDropdown = document.getElementById('partyDropdown');
+    if (!partyDropdown) return;
+    
+    currentFilteredParties = list; // Update global filtered list reference
+    partyDropdown.innerHTML = '';
+    
+    if (list.length === 0) {
+        partyDropdown.innerHTML = '<div style="padding: 12px 14px; color: var(--text-secondary); text-align: center; font-size: 13px;">No parties found</div>';
+        return;
+    }
+    
+    list.forEach(party => {
+        const item = document.createElement('div');
+        item.className = 'dropdown-item';
+        item.dataset.value = party.id;
+        item.innerHTML = `
+            <div style="font-weight: 600; color: white; font-size: 14px;">${party.name}</div>
+            <div class="sub-text" style="font-size: 11px; margin-top: 4px; color: var(--text-secondary);">${party.mobile} • ${party.city}</div>
+        `;
+        
+        item.addEventListener('click', () => {
+            selectParty(party);
+        });
+        
+        partyDropdown.appendChild(item);
+    });
+}
+
+// Handle Party Selection
+function selectParty(party) {
+    const partySearchInput = document.getElementById('partySearchInput');
+    const partyDropdown = document.getElementById('partyDropdown');
+    
+    if (party) {
+        partySearchInput.value = `${party.name} (${party.mobile})`;
+        partyNameSelect.value = party.id;
+    } else {
+        partySearchInput.value = '';
+        partyNameSelect.value = '';
+    }
+    
+    // Trigger change event to autofill other fields
+    partyNameSelect.dispatchEvent(new Event('change'));
+    
+    if (partyDropdown) {
+        partyDropdown.style.display = 'none';
     }
 }
 
@@ -140,6 +195,96 @@ partyNameSelect.addEventListener('change', (e) => {
         addressInput.value = selectedParty.address || '';
     } else {
         clearPartyFields();
+    }
+});
+
+// Setup searchable select search input event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    const partySearchInput = document.getElementById('partySearchInput');
+    const partyDropdown = document.getElementById('partyDropdown');
+    let activeIndex = -1;
+    
+    if (partySearchInput && partyDropdown) {
+        partySearchInput.addEventListener('focus', () => {
+            partyDropdown.style.display = 'block';
+            activeIndex = -1;
+            // Show all options initially on focus
+            renderCustomPartyDropdown(parties);
+        });
+        
+        partySearchInput.addEventListener('input', (e) => {
+            activeIndex = -1;
+            const query = e.target.value.toLowerCase().trim();
+            
+            if (query === '') {
+                partyNameSelect.value = '';
+                partyNameSelect.dispatchEvent(new Event('change'));
+                renderCustomPartyDropdown(parties);
+                partyDropdown.style.display = 'block';
+                return;
+            }
+            
+            const filtered = parties.filter(party => {
+                const name = (party.name || '').toLowerCase();
+                const mobile = (party.mobile || '').toLowerCase();
+                const city = (party.city || '').toLowerCase();
+                return name.includes(query) || mobile.includes(query) || city.includes(query);
+            });
+            
+            renderCustomPartyDropdown(filtered);
+            partyDropdown.style.display = 'block';
+        });
+
+        // Keyboard Navigation (Arrow keys & Enter)
+        partySearchInput.addEventListener('keydown', (e) => {
+            const items = partyDropdown.querySelectorAll('.dropdown-item');
+            
+            if (e.key === 'ArrowDown') {
+                if (items.length === 0) return;
+                e.preventDefault();
+                partyDropdown.style.display = 'block';
+                activeIndex = (activeIndex + 1) % items.length;
+                updateActiveHighlight(items);
+            } else if (e.key === 'ArrowUp') {
+                if (items.length === 0) return;
+                e.preventDefault();
+                partyDropdown.style.display = 'block';
+                activeIndex = (activeIndex - 1 + items.length) % items.length;
+                updateActiveHighlight(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault(); // Stop default form submit
+                
+                if (activeIndex >= 0 && activeIndex < currentFilteredParties.length) {
+                    selectParty(currentFilteredParties[activeIndex]);
+                } else if (currentFilteredParties.length > 0) {
+                    // Fallback: select the first matching item in the list
+                    selectParty(currentFilteredParties[0]);
+                }
+                activeIndex = -1;
+            } else if (e.key === 'Escape') {
+                partyDropdown.style.display = 'none';
+                activeIndex = -1;
+            }
+        });
+        
+        function updateActiveHighlight(items) {
+            items.forEach((item, idx) => {
+                if (idx === activeIndex) {
+                    item.classList.add('active');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+        
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.searchable-select-wrapper')) {
+                partyDropdown.style.display = 'none';
+                activeIndex = -1;
+            }
+        });
     }
 });
 
@@ -174,6 +319,10 @@ async function loadAvailableStocks() {
 // Generate stock options dynamically with counts
 function getStockOptionHTML(selectedSize = '') {
     let optionsHTML = '';
+    
+    // Add placeholder option
+    optionsHTML += `<option value="" disabled ${!selectedSize ? 'selected' : ''}>Select Size</option>`;
+    
     const sizesToRender = [...availableStocks];
     
     // Fallback/standard sizes if not registered in the database
@@ -190,7 +339,7 @@ function getStockOptionHTML(selectedSize = '') {
     sizesToRender.forEach(stock => {
         const sizeVal = stock.product_size;
         const qty = stock.quantity;
-        const isSelected = sizeVal.toUpperCase() === selectedSize.toUpperCase();
+        const isSelected = selectedSize && sizeVal.toUpperCase() === selectedSize.toUpperCase();
         optionsHTML += `<option value="${sizeVal}" ${isSelected ? 'selected' : ''}>${sizeVal} (${qty} available)</option>`;
     });
 
@@ -198,7 +347,7 @@ function getStockOptionHTML(selectedSize = '') {
 }
 
 // Dynamic Products Logic (Add blank row)
-function createBlankProductRow(serial = '', size = 'M', pieces = 1) {
+function createBlankProductRow(serial = '', size = '', pieces = '') {
     const row = document.createElement('div');
     row.className = 'product-row';
     row.style.cssText = 'display: flex; gap: 16px; margin-bottom: 16px; align-items: center;';
@@ -405,6 +554,13 @@ function resetOrderForm() {
     createBlankProductRow();
     
     clearPartyFields();
+
+    // Reset searchable select dropdown
+    const partySearchInput = document.getElementById('partySearchInput');
+    if (partySearchInput) {
+        partySearchInput.value = '';
+    }
+    renderCustomPartyDropdown(parties);
 }
 
 // Open Modal for Add
@@ -442,6 +598,18 @@ window.openEditModal = async (id) => {
     
     // Select party and fill fields
     partyNameSelect.value = order.party_id;
+
+    // Set searchable select value on edit
+    const selectedParty = parties.find(p => p.id == order.party_id);
+    const partySearchInput = document.getElementById('partySearchInput');
+    if (partySearchInput) {
+        if (selectedParty) {
+            partySearchInput.value = `${selectedParty.name} (${selectedParty.mobile})`;
+        } else {
+            partySearchInput.value = '';
+        }
+    }
+    
     mobileInput.value = order.party ? order.party.mobile : '';
     stateInput.value = order.party ? order.party.state : '';
     cityInput.value = order.party ? order.party.city : '';
@@ -533,10 +701,17 @@ function validateForm() {
         if (!serial) {
             showToast('Serial number is required for all product rows.', 'error');
             valid = false;
+            return;
+        }
+        if (!sizeSelected) {
+            showToast('Please select a size for all product rows.', 'error');
+            valid = false;
+            return;
         }
         if (!pieces || pieces < 1) {
             showToast('Pieces must be greater than or equal to 1.', 'error');
             valid = false;
+            return;
         }
 
         // Validate stock quantity
