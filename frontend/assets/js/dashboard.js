@@ -32,31 +32,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             'Accept': 'application/json'
         };
 
-        // Fetch Total Orders
+        // Fetch Order Stats (Total and Pending in a single call)
         try {
-            const res = await fetch(`${API_URL}/orders`, { headers });
+            const res = await fetch(`${API_URL}/orders/stats`, { headers });
             if (res.ok) {
                 const data = await res.json();
-                totalOrdersCount.textContent = data.total !== undefined ? data.total : 0;
+                totalOrdersCount.textContent = data.total_orders !== undefined ? data.total_orders : 0;
+                pendingOrdersCount.textContent = data.pending_orders !== undefined ? data.pending_orders : 0;
             } else {
                 totalOrdersCount.textContent = 'Error';
-            }
-        } catch (e) {
-            console.error('Error fetching total orders:', e);
-            totalOrdersCount.textContent = 'Error';
-        }
-
-        // Fetch Pending Orders
-        try {
-            const res = await fetch(`${API_URL}/orders?status=Pending`, { headers });
-            if (res.ok) {
-                const data = await res.json();
-                pendingOrdersCount.textContent = data.total !== undefined ? data.total : 0;
-            } else {
                 pendingOrdersCount.textContent = 'Error';
             }
         } catch (e) {
-            console.error('Error fetching pending orders:', e);
+            console.error('Error fetching order stats:', e);
+            totalOrdersCount.textContent = 'Error';
             pendingOrdersCount.textContent = 'Error';
         }
 

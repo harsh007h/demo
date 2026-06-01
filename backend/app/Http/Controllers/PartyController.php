@@ -18,7 +18,8 @@ class PartyController extends Controller
                   ->orWhere('mobile', 'LIKE', "%{$search}%");
         }
         
-        return response()->json($query->orderBy('id', 'desc')->paginate(10));
+        $perPage = $request->input('per_page', 10);
+        return response()->json($query->orderBy('id', 'desc')->paginate($perPage));
     }
 
     public function store(Request $request)

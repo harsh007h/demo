@@ -14,6 +14,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::apiResource('parties', PartyController::class);
+    Route::get('/orders/stats', [OrderController::class, 'stats']);
     Route::apiResource('orders', OrderController::class);
     Route::get('/stocks/stats', [StockController::class, 'stats']);
     Route::apiResource('stocks', StockController::class);

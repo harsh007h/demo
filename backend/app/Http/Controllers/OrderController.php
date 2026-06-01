@@ -36,8 +36,23 @@ class OrderController extends Controller
             $query->where('status', $request->status);
         }
 
-        $orders = $query->orderBy('id', 'desc')->paginate(10);
+        $perPage = $request->input('per_page', 10);
+        $orders = $query->orderBy('id', 'desc')->paginate($perPage);
         return response()->json($orders);
+    }
+
+    /**
+     * Get order stats (total orders, pending orders count).
+     */
+    public function stats()
+    {
+        $totalOrders = Order::count();
+        $pendingOrders = Order::where('status', 'Pending')->count();
+
+        return response()->json([
+            'total_orders' => $totalOrders,
+            'pending_orders' => $pendingOrders
+        ]);
     }
 
     /**
