@@ -103,6 +103,7 @@
                 <table class="custom-table">
                     <thead>
                         <tr>
+                            <th>Product Name</th>
                             <th>Product Size</th>
                             <th>Quantity</th>
                             <th>Status</th>
@@ -130,6 +131,10 @@
             
             <form id="stockForm">
                 <input type="hidden" id="stockId">
+                <div class="form-group">
+                    <label>Product Name</label>
+                    <input type="text" id="productName" required placeholder="Enter product name (e.g. Shirt A, Jeans B)">
+                </div>
                 <div class="form-group">
                     <label>Product Size</label>
                     <input type="text" id="productSize" required placeholder="Enter size (e.g. M, L, XL, XXL, 32, 34)">

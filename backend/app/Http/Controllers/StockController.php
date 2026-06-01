@@ -17,7 +17,10 @@ class StockController extends Controller
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
-            $query->where('product_size', 'LIKE', "%{$search}%");
+            $query->where(function($q) use ($search) {
+                $q->where('product_name', 'LIKE', "%{$search}%")
+                  ->orWhere('product_size', 'LIKE', "%{$search}%");
+            });
         }
 
         // Support custom page sizes, defaulting to 10
@@ -34,9 +37,18 @@ class StockController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'product_size' => 'required|string|max:50|unique:stocks,product_size',
+            'product_name' => 'required|string|max:100',
+            'product_size' => 'required|string|max:50',
             'quantity' => 'required|integer|min:0',
         ]);
+
+        // Unique composite check
+        $exists = Stock::where('product_name', $validated['product_name'])
+                       ->where('product_size', $validated['product_size'])
+                       ->exists();
+        if ($exists) {
+            return response()->json(['message' => 'This product name and size combination already exists.'], 422);
+        }
 
         $stock = Stock::create($validated);
         return response()->json($stock, 201);
@@ -59,9 +71,21 @@ class StockController extends Controller
         $stock = Stock::findOrFail($id);
 
         $validated = $request->validate([
-            'product_size' => 'sometimes|required|string|max:50|unique:stocks,product_size,' . $id,
+            'product_name' => 'sometimes|required|string|max:100',
+            'product_size' => 'sometimes|required|string|max:50',
             'quantity' => 'sometimes|required|integer|min:0',
         ]);
+
+        $newName = $validated['product_name'] ?? $stock->product_name;
+        $newSize = $validated['product_size'] ?? $stock->product_size;
+
+        $exists = Stock::where('product_name', $newName)
+                       ->where('product_size', $newSize)
+                       ->where('id', '!=', $id)
+                       ->exists();
+        if ($exists) {
+            return response()->json(['message' => 'This product name and size combination already exists.'], 422);
+        }
 
         $stock->update($validated);
         return response()->json($stock);

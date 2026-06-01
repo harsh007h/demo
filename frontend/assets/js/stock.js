@@ -34,6 +34,7 @@ const logoutBtn = document.getElementById('logoutBtn');
 
 // Form Fields
 const stockIdInput = document.getElementById('stockId');
+const productNameInput = document.getElementById('productName');
 const productSizeInput = document.getElementById('productSize');
 const quantityInput = document.getElementById('quantity');
 
@@ -128,7 +129,7 @@ function renderTable(data) {
     stockTableBody.innerHTML = '';
     
     if (data.length === 0) {
-        stockTableBody.innerHTML = `<tr><td colspan="4" class="text-center">No stock records found</td></tr>`;
+        stockTableBody.innerHTML = `<tr><td colspan="5" class="text-center">No stock records found</td></tr>`;
         return;
     }
     
@@ -140,6 +141,7 @@ function renderTable(data) {
             : `<span class="status-badge status-ok">In Stock</span>`;
             
         tr.innerHTML = `
+            <td><strong>${stock.product_name || '-'}</strong></td>
             <td><strong>${stock.product_size}</strong></td>
             <td>
                 <span style="font-size: 16px; font-weight: 600; color: ${isLow ? 'var(--error-color)' : '#ffffff'}">
@@ -201,6 +203,10 @@ addStockBtn.addEventListener('click', () => {
     modalTitle.textContent = 'Add New Stock';
     stockForm.reset();
     stockIdInput.value = '';
+    if (productNameInput) {
+        productNameInput.disabled = false;
+        productNameInput.value = '';
+    }
     productSizeInput.disabled = false; // Allow size typing on creation
     stockModal.classList.add('show');
 });
@@ -217,6 +223,10 @@ window.openEditModal = (id) => {
     
     modalTitle.textContent = 'Edit Stock';
     stockIdInput.value = stock.id;
+    if (productNameInput) {
+        productNameInput.value = stock.product_name || '';
+        productNameInput.disabled = false;
+    }
     productSizeInput.value = stock.product_size;
     productSizeInput.disabled = false; // keep it enabled, or disabled if they shouldn't change sizes. Let's keep it editable.
     quantityInput.value = stock.quantity;
@@ -255,6 +265,7 @@ stockForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const stockData = {
+        product_name: productNameInput.value.trim(),
         product_size: productSizeInput.value.trim(),
         quantity: parseInt(quantityInput.value)
     };

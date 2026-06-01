@@ -316,33 +316,36 @@ async function loadAvailableStocks() {
     }
 }
 
-// Generate stock options dynamically with counts
-function getStockOptionHTML(selectedSize = '') {
+// Generate product options dynamically from Stock module
+function getProductOptionHTML(selectedProduct = '') {
     let optionsHTML = '';
     
     // Add placeholder option
+    optionsHTML += `<option value="" disabled ${!selectedProduct ? 'selected' : ''}>Select Product</option>`;
+    
+    // Get unique product names from availableStocks
+    const uniqueProductNames = [...new Set(availableStocks.map(s => s.product_name).filter(Boolean))];
+    
+    uniqueProductNames.forEach(prodVal => {
+        const isSelected = selectedProduct && prodVal.toUpperCase() === selectedProduct.toUpperCase();
+        optionsHTML += `<option value="${prodVal}" ${isSelected ? 'selected' : ''}>${prodVal}</option>`;
+    });
+
+    return optionsHTML;
+}
+
+// Generate static size options
+function getSizeOptionHTML(selectedSize = '') {
+    const standardSizes = ['M', 'L', 'XL', 'XXL'];
+    let optionsHTML = '';
+    
     optionsHTML += `<option value="" disabled ${!selectedSize ? 'selected' : ''}>Select Size</option>`;
     
-    const sizesToRender = [...availableStocks];
-    
-    // Fallback/standard sizes if not registered in the database
-    const standardSizes = ['M', 'L', 'XL', 'XXL'];
-    standardSizes.forEach(stdSize => {
-        if (!sizesToRender.some(s => s.product_size.toUpperCase() === stdSize.toUpperCase())) {
-            sizesToRender.push({ product_size: stdSize, quantity: 0 });
-        }
-    });
-
-    // Sort sizes logically
-    sizesToRender.sort((a, b) => a.product_size.localeCompare(b.product_size));
-
-    sizesToRender.forEach(stock => {
-        const sizeVal = stock.product_size;
-        const qty = stock.quantity;
+    standardSizes.forEach(sizeVal => {
         const isSelected = selectedSize && sizeVal.toUpperCase() === selectedSize.toUpperCase();
-        optionsHTML += `<option value="${sizeVal}" ${isSelected ? 'selected' : ''}>${sizeVal} (${qty} available)</option>`;
+        optionsHTML += `<option value="${sizeVal}" ${isSelected ? 'selected' : ''}>${sizeVal}</option>`;
     });
-
+    
     return optionsHTML;
 }
 
@@ -354,11 +357,13 @@ function createBlankProductRow(serial = '', size = '', pieces = '') {
     
     row.innerHTML = `
         <div style="flex: 2;">
-            <input type="text" class="serialNo" required placeholder="Serial No" value="${serial}" style="margin-bottom: 0;">
+            <select class="serialNo" required style="margin-bottom: 0;">
+                ${getProductOptionHTML(serial)}
+            </select>
         </div>
         <div style="flex: 1;">
             <select class="size" required style="margin-bottom: 0;">
-                ${getStockOptionHTML(size)}
+                ${getSizeOptionHTML(size)}
             </select>
         </div>
         <div style="flex: 1;">
@@ -694,12 +699,12 @@ function validateForm() {
     
     let valid = true;
     rows.forEach(row => {
-        const serial = row.querySelector('.serialNo').value.trim();
+        const serialSelected = row.querySelector('.serialNo').value;
         const pieces = parseInt(row.querySelector('.pieces').value, 10);
         const sizeSelected = row.querySelector('.size').value;
         
-        if (!serial) {
-            showToast('Serial number is required for all product rows.', 'error');
+        if (!serialSelected) {
+            showToast('Product is required for all product rows.', 'error');
             valid = false;
             return;
         }
@@ -714,11 +719,14 @@ function validateForm() {
             return;
         }
 
-        // Validate stock quantity
-        const stockItem = availableStocks.find(s => s.product_size.toUpperCase() === sizeSelected.toUpperCase());
+        // Validate stock quantity using the selected product name and selected size
+        const stockItem = availableStocks.find(s => 
+            s.product_name && s.product_name.toUpperCase() === serialSelected.toUpperCase() &&
+            s.product_size && s.product_size.toUpperCase() === sizeSelected.toUpperCase()
+        );
         const availableQty = stockItem ? stockItem.quantity : 0;
         if (pieces > availableQty) {
-            showToast(`Error: Size ${sizeSelected} only has ${availableQty} pieces in stock, but you entered ${pieces}.`, 'error');
+            showToast(`Error: Product "${serialSelected}" (Size: ${sizeSelected}) only has ${availableQty} pieces in stock, but you entered ${pieces}.`, 'error');
             valid = false;
         }
     });

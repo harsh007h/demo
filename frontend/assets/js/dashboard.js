@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             div.href = 'stock.html';
             div.className = 'low-stock-item';
             div.innerHTML = `
-                <span class="size-label">Size: ${item.product_size}</span>
+                <span class="size-label">${item.product_name || 'Product'} (${item.product_size})</span>
                 <span class="quantity-badge">${item.quantity} left</span>
             `;
             lowStockDetailsContainer.appendChild(div);

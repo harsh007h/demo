@@ -84,7 +84,7 @@ class OrderController extends Controller
                 ]);
 
                 // Decrement stock quantity
-                $stock = \App\Models\Stock::where('product_size', $product['size'])->first();
+                $stock = \App\Models\Stock::where('product_name', $product['serial_no'])->where('product_size', $product['size'])->first();
                 if ($stock) {
                     $stock->quantity = max(0, $stock->quantity - $product['pieces']);
                     $stock->save();
@@ -133,7 +133,7 @@ class OrderController extends Controller
         return DB::transaction(function () use ($order, $validated) {
             // Restore stock levels from previous order items
             foreach ($order->items as $item) {
-                $stock = \App\Models\Stock::where('product_size', $item->size)->first();
+                $stock = \App\Models\Stock::where('product_name', $item->serial_no)->where('product_size', $item->size)->first();
                 if ($stock) {
                     $stock->quantity += $item->pieces;
                     $stock->save();
@@ -152,7 +152,7 @@ class OrderController extends Controller
                     ]);
 
                     // Deduct stock levels for updated order items
-                    $stock = \App\Models\Stock::where('product_size', $product['size'])->first();
+                    $stock = \App\Models\Stock::where('product_name', $product['serial_no'])->where('product_size', $product['size'])->first();
                     if ($stock) {
                         $stock->quantity = max(0, $stock->quantity - $product['pieces']);
                         $stock->save();
@@ -161,7 +161,7 @@ class OrderController extends Controller
             } else {
                 // If products were not updated, re-apply deductions to stay balanced
                 foreach ($order->items as $item) {
-                    $stock = \App\Models\Stock::where('product_size', $item->size)->first();
+                    $stock = \App\Models\Stock::where('product_name', $item->serial_no)->where('product_size', $item->size)->first();
                     if ($stock) {
                         $stock->quantity = max(0, $stock->quantity - $item->pieces);
                         $stock->save();
@@ -186,7 +186,7 @@ class OrderController extends Controller
         DB::transaction(function () use ($order) {
             // Restore stock quantities
             foreach ($order->items as $item) {
-                $stock = \App\Models\Stock::where('product_size', $item->size)->first();
+                $stock = \App\Models\Stock::where('product_name', $item->serial_no)->where('product_size', $item->size)->first();
                 if ($stock) {
                     $stock->quantity += $item->pieces;
                     $stock->save();
