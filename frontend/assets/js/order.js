@@ -437,11 +437,35 @@ prevStepBtn.addEventListener('click', () => {
     step2Container.style.display = 'none';
 });
 
-// Fetch and Render Orders Table
+// Helper to clear orders cache
+function clearOrdersCache() {
+    Object.keys(sessionStorage).forEach(key => {
+        if (key.startsWith('orders_cache_')) {
+            sessionStorage.removeItem(key);
+        }
+    });
+}
+
+// Fetch and Render Orders Table with Stale-While-Revalidate caching
 async function loadOrders(page = 1, search = '', status = '') {
-    try {
+    const cacheKey = `orders_cache_p${page}_s${search}_st${status}`;
+    const cachedData = sessionStorage.getItem(cacheKey);
+    
+    // 0ms instant render from cache if available
+    if (cachedData) {
+        try {
+            const data = JSON.parse(cachedData);
+            orders = data.data; // paginated items
+            renderTable(orders);
+            renderPagination(data);
+        } catch (e) {
+            console.error('Failed to parse cached orders:', e);
+        }
+    } else {
         setLoading(searchOrderBtn, true);
-        
+    }
+
+    try {
         let url = `${API_URL}/orders?page=${page}`;
         if (search) {
             url += `&search=${encodeURIComponent(search)}`;
@@ -454,6 +478,11 @@ async function loadOrders(page = 1, search = '', status = '') {
         if (response.ok) {
             const data = await response.json();
             orders = data.data; // paginated items
+            
+            // Save to cache for subsequent fast loads
+            sessionStorage.setItem(cacheKey, JSON.stringify(data));
+            
+            // Render fresh data in the background
             renderTable(orders);
             renderPagination(data);
         } else if (response.status === 401) {
@@ -464,7 +493,9 @@ async function loadOrders(page = 1, search = '', status = '') {
         }
     } catch (error) {
         console.error('Error fetching orders:', error);
-        showToast('Network error while loading orders', 'error');
+        if (!cachedData) {
+            showToast('Network error while loading orders', 'error');
+        }
     } finally {
         setLoading(searchOrderBtn, false);
     }
@@ -684,6 +715,7 @@ window.deleteOrder = async (id) => {
                 headers
             });
             if (response.ok) {
+                clearOrdersCache(); // Invalidate cache
                 showToast('Order deleted successfully!', 'success');
                 loadOrders(currentPage, currentSearch, currentStatus);
             } else {
@@ -803,6 +835,7 @@ orderForm.addEventListener('submit', async (e) => {
         }
 
         if (response.ok || response.status === 201) {
+            clearOrdersCache(); // Invalidate cache
             showToast(editId ? 'Order updated successfully!' : 'Order added successfully!', 'success');
             orderModal.classList.remove('show');
             loadOrders(currentPage, currentSearch, currentStatus);

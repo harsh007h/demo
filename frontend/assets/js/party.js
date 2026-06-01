@@ -77,11 +77,35 @@ function setLoading(btnElement, isLoading) {
     }
 }
 
-// Fetch and Render Table
+// Helper to clear parties cache
+function clearPartiesCache() {
+    Object.keys(sessionStorage).forEach(key => {
+        if (key.startsWith('parties_cache_')) {
+            sessionStorage.removeItem(key);
+        }
+    });
+}
+
+// Fetch and Render Table with Stale-While-Revalidate caching
 async function loadParties(page = 1, search = '') {
-    try {
+    const cacheKey = `parties_cache_p${page}_s${search}`;
+    const cachedData = sessionStorage.getItem(cacheKey);
+    
+    // 0ms instant render from cache if available
+    if (cachedData) {
+        try {
+            const data = JSON.parse(cachedData);
+            parties = data.data; // paginated items
+            renderTable(parties);
+            renderPagination(data);
+        } catch (e) {
+            console.error('Failed to parse cached parties:', e);
+        }
+    } else {
         setLoading(searchPartyBtn, true);
-        
+    }
+
+    try {
         let url = `${API_URL}/parties?page=${page}`;
         if (search) {
             url += `&search=${encodeURIComponent(search)}`;
@@ -91,6 +115,11 @@ async function loadParties(page = 1, search = '') {
         if (response.ok) {
             const data = await response.json();
             parties = data.data; // paginated items
+            
+            // Save to cache for subsequent fast loads
+            sessionStorage.setItem(cacheKey, JSON.stringify(data));
+            
+            // Render fresh data in the background
             renderTable(parties);
             renderPagination(data);
         } else if (response.status === 401) {
@@ -101,7 +130,9 @@ async function loadParties(page = 1, search = '') {
         }
     } catch (error) {
         console.error('Error fetching parties:', error);
-        showToast('Network error while loading parties', 'error');
+        if (!cachedData) {
+            showToast('Network error while loading parties', 'error');
+        }
     } finally {
         setLoading(searchPartyBtn, false);
     }
@@ -213,6 +244,7 @@ window.deleteParty = async (id) => {
                 headers
             });
             if (response.ok || response.status === 204) {
+                clearPartiesCache(); // Invalidate cache
                 showToast('Party deleted successfully!', 'success');
                 loadParties(currentPage, currentSearch);
             } else {
@@ -281,6 +313,7 @@ partyForm.addEventListener('submit', async (e) => {
         }
 
         if (response.ok || response.status === 201) {
+            clearPartiesCache(); // Invalidate cache
             showToast(editId ? 'Party updated successfully!' : 'Party added successfully!', 'success');
             partyModal.classList.remove('show');
             loadParties(currentPage, currentSearch); // reload current page
