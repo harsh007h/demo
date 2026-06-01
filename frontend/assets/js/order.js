@@ -90,7 +90,7 @@ async function loadParties() {
             parties.forEach(party => {
                 const option = document.createElement('option');
                 option.value = party.id;
-                option.textContent = party.name;
+                option.textContent = `${party.name} (${party.mobile} - ${party.city})`;
                 partyNameSelect.appendChild(option);
             });
         } else if (response.status === 401) {
