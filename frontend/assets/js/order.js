@@ -362,7 +362,7 @@ function createBlankProductRow(serial = '', size = '', pieces = '') {
             </select>
         </div>
         <div style="flex: 1;">
-            <input type="number" class="pieces" required value="${pieces}" min="1" style="margin-bottom: 0;">
+            <input type="number" class="pieces" required placeholder="Pieces Number" value="${pieces}" min="1" style="margin-bottom: 0;">
         </div>
         <div>
             <button type="button" class="btn remove-product-btn" style="background: #ef4444; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: bold; border: none; flex-shrink: 0;">X</button>
