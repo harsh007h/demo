@@ -28,6 +28,12 @@ class AuthController extends Controller
             ], 401);
         }
 
+        if ($user->status !== 'Active') {
+            return response()->json([
+                'message' => 'Your account has been deactivated.'
+            ], 403);
+        }
+
         $token = Str::random(60);
         $user->forceFill([
             'api_token' => $token,
@@ -35,6 +41,11 @@ class AuthController extends Controller
 
         return response()->json([
             'token' => $token,
+            'user' => [
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ],
             'message' => 'Login successful'
         ]);
     }

@@ -313,5 +313,11 @@ searchPartyInput.addEventListener('keyup', (e) => {
 
 // Initial Load
 document.addEventListener('DOMContentLoaded', () => {
+    // Hide User Management for Staff
+    const userRole = localStorage.getItem('user_role');
+    if (userRole !== 'Admin') {
+        const userNav = document.querySelectorAll('.sidebar-nav a[href="user.html"]');
+        userNav.forEach(el => el.remove());
+    }
     loadParties(currentPage, currentSearch);
 });

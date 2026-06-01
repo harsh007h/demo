@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PartyController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\StockController;
+use App\Http\Controllers\UserController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -16,5 +17,10 @@ Route::middleware('auth:api')->group(function () {
     Route::apiResource('orders', OrderController::class);
     Route::get('/stocks/stats', [StockController::class, 'stats']);
     Route::apiResource('stocks', StockController::class);
+
+    // Only Admins can manage users
+    Route::middleware('admin')->group(function () {
+        Route::apiResource('users', UserController::class);
+    });
 });
 

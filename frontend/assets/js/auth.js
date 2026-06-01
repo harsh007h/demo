@@ -41,6 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 // Save token and redirect
                 localStorage.setItem('api_token', data.token);
+                localStorage.setItem('user_role', data.user.role);
+                localStorage.setItem('user_name', data.user.name);
                 window.location.href = 'dashboard.html';
             } else {
                 // Show error message

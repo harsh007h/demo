@@ -615,6 +615,12 @@ resetFilterBtn.addEventListener('click', () => {
 
 // Initial Setup
 document.addEventListener('DOMContentLoaded', async () => {
+    // Hide User Management for Staff
+    const userRole = localStorage.getItem('user_role');
+    if (userRole !== 'Admin') {
+        const userNav = document.querySelectorAll('.sidebar-nav a[href="user.html"]');
+        userNav.forEach(el => el.remove());
+    }
     loadParties();
     await loadAvailableStocks();
     loadOrders(currentPage, currentSearch, currentStatus);

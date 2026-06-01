@@ -9,6 +9,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    // Hide User Management for Staff
+    const userRole = localStorage.getItem('user_role');
+    if (userRole !== 'Admin') {
+        const userNav = document.querySelectorAll('.sidebar-nav a[href="user.html"]');
+        userNav.forEach(el => el.remove());
+    }
+
     const dashboardContent = document.getElementById('dashboardContent');
     const userNameElement = document.getElementById('userName');
     const userEmailElement = document.getElementById('userEmail');

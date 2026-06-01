@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./assets/css/style.css">
+    <style>
+        /* Custom role & status badge colors */
+        .role-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .role-admin {
+            background: rgba(139, 92, 246, 0.15);
+            color: #c084fc;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+        .role-staff {
+            background: rgba(6, 182, 212, 0.15);
+            color: #22d3ee;
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+        .status-active {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .status-inactive {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        .password-note {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            display: none;
+        }
+    </style>
+</head>
+<body class="dashboard-page">
+    <div class="bg-shape shape1"></div>
+    <div class="bg-shape shape2" style="background: #10b981;"></div>
+    
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar glass-card">
+            <div class="sidebar-header">
+                <h2>Admin</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="party.html">Parties</a>
+                <a href="order.html">Orders</a>
+                <a href="stock.html">Stock Management</a>
+                <a href="user.html" class="active">Users</a>
+            </nav>
+            <div style="margin-top: auto;">
+                <button class="btn btn-logout" id="logoutBtn">Log Out</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Navbar -->
+            <header class="top-navbar glass-card">
+                <div class="navbar-title" style="font-size: 18px; font-weight: 600;">User Management</div>
+                <div class="navbar-user">
+                    <button class="btn" id="addUserBtn" style="width: auto; margin-top: 0; padding: 10px 20px;">
+                        <span class="btn-text">+ Add User</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Search and Filter -->
+            <div class="glass-card" style="max-width: none; padding: 20px; display: flex; gap: 16px; margin-bottom: 24px;">
+                <input type="text" id="searchUserInput" placeholder="Search User by Name, Email or Mobile..." style="flex: 1;">
+                <button class="btn" id="searchUserBtn" style="width: auto; margin-top: 0; padding: 0 24px;">
+                    <span class="btn-text">Search</span>
+                    <span class="loader"></span>
+                </button>
+            </div>
+
+            <!-- Table -->
+            <div class="glass-card table-container" style="max-width: none; overflow-x: auto; padding: 0;">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Full Name</th>
+                            <th>Email Address</th>
+                            <th>Mobile Number</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        <!-- Data populated by JS -->
+                    </tbody>
+                </table>
+                <div id="paginationContainer" class="pagination-container">
+                    <!-- Pagination populated by JS -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Add/Edit -->
+    <div id="userModal" class="modal-overlay">
+        <div class="glass-card modal-content" style="max-width: 500px; width: 100%; margin: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h3 id="modalTitle" style="color: white; font-size: 20px;">Add New User</h3>
+                <button id="closeModal" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            
+            <form id="userForm">
+                <input type="hidden" id="userId">
+                
+                <div class="form-group">
+                    <label for="userNameInput">Full Name</label>
+                    <input type="text" id="userNameInput" required placeholder="Enter full name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="userEmailInput">Email Address</label>
+                    <input type="email" id="userEmailInput" required placeholder="Enter email address">
+                </div>
+
+                <div class="form-group">
+                    <label for="userMobileInput">Mobile Number</label>
+                    <input type="text" id="userMobileInput" placeholder="Enter mobile number">
+                </div>
+
+                <div class="form-group">
+                    <label for="userPasswordInput" id="passwordLabel">Password</label>
+                    <input type="password" id="userPasswordInput" placeholder="Enter password">
+                    <div id="passwordNote" class="password-note">Leave blank to keep existing password.</div>
+                </div>
+
+                <div style="display: flex; gap: 16px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="userRoleSelect">Role</label>
+                        <select id="userRoleSelect" required>
+                            <option value="Staff" selected>Staff</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" style="flex: 1;">
+                        <label for="userStatusSelect">Status</label>
+                        <select id="userStatusSelect" required>
+                            <option value="Active" selected>Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn" id="saveUserBtn">
+                    <span class="btn-text">Save User</span>
+                    <span class="loader"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="./assets/js/user.js"></script>
+</body>
+</html>
