@@ -49,4 +49,46 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Accessor for role.
+     */
+    public function getRoleAttribute($value)
+    {
+        if (empty($value)) {
+            return 'Staff';
+        }
+        $role = ucfirst(strtolower($value));
+        if ($role === 'User') {
+            return 'Staff';
+        }
+        return $role;
+    }
+
+    /**
+     * Mutator for role.
+     */
+    public function setRoleAttribute($value)
+    {
+        $this->attributes['role'] = $value ? ucfirst(strtolower($value)) : 'Staff';
+    }
+
+    /**
+     * Accessor for status.
+     */
+    public function getStatusAttribute($value)
+    {
+        if (empty($value)) {
+            return 'Active';
+        }
+        return ucfirst(strtolower($value));
+    }
+
+    /**
+     * Mutator for status.
+     */
+    public function setStatusAttribute($value)
+    {
+        $this->attributes['status'] = $value ? ucfirst(strtolower($value)) : 'Active';
+    }
 }
