@@ -47,13 +47,6 @@
             <div class="glass-card" style="max-width: none; padding: 20px; display: flex; gap: 16px; margin-bottom: 24px; align-items: center;">
                 <input type="text" id="searchOrderInput" placeholder="Search Order by Party, Transport, Mobile or Notes..." style="flex: 1;">
                 
-                <select id="statusFilter" style="width: 200px; margin-bottom: 0;">
-                    <option value="">All Statuses</option>
-                    <option value="Pending">Pending</option>
-                    <option value="In Review">In Review</option>
-                    <option value="Bill Sent">Bill Sent</option>
-                    <option value="Completed">Completed</option>
-                </select>
 
                 <button class="btn" id="searchOrderBtn" style="width: auto; margin-top: 0; padding: 0 24px; height: 50px;">
                     <span class="btn-text">Search</span>
@@ -73,7 +66,6 @@
                             <th>Party Details</th>
                             <th>Order Date</th>
                             <th>Transport Details</th>
-                            <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -98,138 +90,139 @@
             
             <form id="orderForm">
                 <input type="hidden" id="orderId">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 30px;">
-                    <!-- Left Column: Customer Details -->
-                    <div>
-                        <h3 style="margin-bottom: 24px; font-size: 18px; font-weight: 600; color: white;">Customer Details</h3>
-                        
-                        <div class="form-group">
-                            <label>Order Date</label>
-                            <input type="date" id="orderDate" required>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Party Name</label>
-                            <div style="display: flex; gap: 12px;">
-                                <select id="partyName" required style="flex: 1;">
-                                    <option value="" disabled selected>Select Party</option>
-                                    <!-- Options will be populated dynamically -->
-                                </select>
-                                <button type="button" id="addPartyRedirectBtn" class="btn" style="width: auto; padding: 0 20px; background: #6366f1; border: none; font-weight: 600;">+ Add</button>
+                <!-- Step 1: Customer Details & Transport Info -->
+                <div id="step1Container">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 30px;">
+                        <!-- Left Column: Customer Details -->
+                        <div>
+                            <div class="form-group">
+                                <label>Party Name</label>
+                                <div style="display: flex; gap: 12px; align-items: center;">
+                                    <select id="partyName" required style="flex: 1; margin-bottom: 0;">
+                                        <option value="" disabled selected>Select Party</option>
+                                        <!-- Options will be populated dynamically -->
+                                    </select>
+                                    <button type="button" id="addPartyRedirectBtn" class="btn" style="width: auto; padding: 14px 24px; background: #6366f1; border: none; font-weight: 600; margin-top: 0; border-radius: 12px; height: 50px; display: flex; align-items: center; justify-content: center;">+ Add</button>
+                                </div>
+                            </div>
+                            
+                            <div class="row" style="display: flex; gap: 16px; margin-bottom: 20px;">
+                                <div class="col form-group" style="flex: 1; margin-bottom: 0;">
+                                    <label>State</label>
+                                    <input type="text" id="state" required placeholder="State">
+                                </div>
+                                <div class="col form-group" style="flex: 1; margin-bottom: 0;">
+                                    <label>City</label>
+                                    <input type="text" id="city" required placeholder="City">
+                                </div>
+                            </div>
+                            <div class="row" style="display: flex; gap: 16px; margin-bottom: 20px;">
+                                <div class="col form-group" style="flex: 1; margin-bottom: 0;">
+                                    <label>Pincode</label>
+                                    <input type="text" id="pincode" required placeholder="Pincode">
+                                </div>
+                                <div class="col form-group" style="flex: 1; margin-bottom: 0;">
+                                    <label>Address</label>
+                                    <input type="text" id="address" required placeholder="Full Address">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Mobile Number</label>
+                                <input type="text" id="mobile" required placeholder="Mobile Number">
                             </div>
                         </div>
-                        
-                        <div class="row" style="display: flex; gap: 16px; margin-bottom: 20px;">
-                            <div class="col form-group" style="flex: 1; margin-bottom: 0;">
-                                <label>State</label>
-                                <input type="text" id="state" required placeholder="State">
-                            </div>
-                            <div class="col form-group" style="flex: 1; margin-bottom: 0;">
-                                <label>City</label>
-                                <input type="text" id="city" required placeholder="City">
-                            </div>
-                        </div>
-                        <div class="row" style="display: flex; gap: 16px;">
-                            <div class="col form-group" style="flex: 1; margin-bottom: 0;">
-                                <label>Pincode</label>
-                                <input type="text" id="pincode" required placeholder="Pincode">
-                            </div>
-                            <div class="col form-group" style="flex: 1; margin-bottom: 0;">
-                                <label>Address</label>
-                                <input type="text" id="address" required placeholder="Full Address">
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Right Column: Transport & Payment -->
-                    <div>
-                        <h3 style="margin-bottom: 24px; font-size: 18px; font-weight: 600; color: white;">Transport & Payment</h3>
-                        
-                        <div class="form-group">
-                            <label>Transport Name</label>
-                            <input type="text" id="transportName" required placeholder="Enter Transport Agency Name">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Transport Number</label>
-                            <input type="text" id="transportNumber" placeholder="Vehicle / Transport Number">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Mobile Number</label>
-                            <input type="text" id="mobile" required placeholder="Mobile Number">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Payment Method</label>
-                            <select id="paymentMethod" required>
-                                <option value="Cash" selected>Cash</option>
-                                <option value="UPI">UPI</option>
-                                <option value="Bank Transfer">Bank Transfer</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Status</label>
-                            <select id="status" required>
-                                <option value="Pending" selected>Pending</option>
-                                <option value="In Review">In Review</option>
-                                <option value="Bill Sent">Bill Sent</option>
-                                <option value="Completed">Completed</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="height: 1px; background: rgba(255,255,255,0.1); margin-bottom: 30px;"></div>
-
-                <!-- Product Details Section -->
-                <div>
-                    <h3 style="margin-bottom: 20px; font-size: 18px; font-weight: 600; color: white;">Product Details</h3>
-                    
-                    <div id="productList">
-                        <!-- Initial Product Row -->
-                        <div class="product-row" style="display: flex; gap: 16px; margin-bottom: 16px; align-items: center;">
-                            <div style="flex: 2;">
-                                <input type="text" class="serialNo" required placeholder="Serial No" style="margin-bottom: 0;">
+                        <!-- Right Column: Transport & Payment -->
+                        <div>
+                            <div class="form-group" style="margin-bottom: 24px;">
+                                <label>Order Date</label>
+                                <input type="date" id="orderDate" required>
                             </div>
-                            <div style="flex: 1;">
-                                <select class="size" required style="margin-bottom: 0;">
-                                    <option value="M" selected>M</option>
-                                    <option value="L">L</option>
-                                    <option value="XL">XL</option>
-                                    <option value="XXL">XXL</option>
+
+                            <h3 style="margin-bottom: 24px; font-size: 18px; font-weight: 600; color: white;">Transport & Payment</h3>
+                            
+                            <div class="form-group">
+                                <label>Transport Name</label>
+                                <input type="text" id="transportName" required placeholder="Enter Transport Agency Name">
+                            </div>
+                            
+                            <div class="form-group edit-only-field">
+                                <label>Transport Number</label>
+                                <input type="text" id="transportNumber" placeholder="Vehicle / Transport Number">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Payment Method</label>
+                                <select id="paymentMethod" required>
+                                    <option value="Cash" selected>Cash</option>
+                                    <option value="UPI">UPI</option>
+                                    <option value="Bank Transfer">Bank Transfer</option>
                                 </select>
                             </div>
-                            <div style="flex: 1;">
-                                <input type="number" class="pieces" required value="1" min="1" style="margin-bottom: 0;">
-                            </div>
-                            <div>
-                                <button type="button" class="btn remove-product-btn" style="background: #ef4444; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: bold; border: none; flex-shrink: 0;">X</button>
-                            </div>
+                            
                         </div>
                     </div>
 
-                    <button type="button" id="addProductBtn" class="btn" style="width: auto; padding: 10px 20px; background: #6366f1; border: none; font-weight: 600; font-size: 14px; margin-top: 8px; border-radius: 8px;">+ Add Product</button>
+                    <div style="margin-top: 30px; display: flex; justify-content: flex-end;">
+                        <button type="button" class="btn" id="nextStepBtn" style="width: auto; padding: 12px 40px; margin-top: 0; background: #6366f1; border: none; font-weight: 600; border-radius: 12px; display: flex; align-items: center; justify-content: center; height: 50px;">
+                            <span class="btn-text">Next</span>
+                        </button>
+                    </div>
                 </div>
 
-                <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 30px 0;"></div>
+                <!-- Step 2: Product Details & Additional Notes -->
+                <div id="step2Container" style="display: none;">
+                    <!-- Product Details Section -->
+                    <div>
+                        <h3 style="margin-bottom: 20px; font-size: 18px; font-weight: 600; color: white;">Product Details</h3>
+                        
+                        <div id="productList">
+                            <!-- Initial Product Row -->
+                            <div class="product-row" style="display: flex; gap: 16px; margin-bottom: 16px; align-items: center;">
+                                <div style="flex: 2;">
+                                    <input type="text" class="serialNo" required placeholder="Serial No" style="margin-bottom: 0;">
+                                </div>
+                                <div style="flex: 1;">
+                                    <select class="size" required style="margin-bottom: 0;">
+                                        <option value="M" selected>M</option>
+                                        <option value="L">L</option>
+                                        <option value="XL">XL</option>
+                                        <option value="XXL">XXL</option>
+                                    </select>
+                                </div>
+                                <div style="flex: 1;">
+                                    <input type="number" class="pieces" required value="1" min="1" style="margin-bottom: 0;">
+                                </div>
+                                <div>
+                                    <button type="button" class="btn remove-product-btn" style="background: #ef4444; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: bold; border: none; flex-shrink: 0;">X</button>
+                                </div>
+                            </div>
+                        </div>
 
-                <!-- Additional Notes -->
-                <div class="form-group">
-                    <label>Additional Notes</label>
-                    <textarea id="notes" placeholder="Enter any additional notes here..." style="min-height: 100px; resize: vertical;"></textarea>
-                </div>
+                        <button type="button" id="addProductBtn" class="btn" style="width: auto; padding: 10px 20px; background: #6366f1; border: none; font-weight: 600; font-size: 14px; margin-top: 8px; border-radius: 8px;">+ Add Product</button>
+                    </div>
 
-                <!-- Action Buttons -->
-                <div style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 16px;">
-                    <button type="button" class="btn" id="printOrderBtn" style="width: auto; padding: 10px 30px; background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); margin-top: 0;">
-                        <span class="btn-text">Print</span>
-                    </button>
-                    <button type="submit" class="btn" id="saveOrderBtn" style="width: auto; padding: 10px 30px; margin-top: 0;">
-                        <span class="btn-text">Save</span>
-                        <span class="loader"></span>
-                    </button>
+                    <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 30px 0;"></div>
+
+                    <!-- Additional Notes -->
+                    <div class="form-group">
+                        <label>Additional Notes</label>
+                        <textarea id="notes" placeholder="Enter any additional notes here..." style="min-height: 100px; resize: vertical;"></textarea>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 16px;">
+                        <button type="button" class="btn" id="prevStepBtn" style="width: auto; padding: 10px 30px; background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); margin-top: 0;">
+                            <span class="btn-text">Back</span>
+                        </button>
+                        <button type="button" class="btn" id="printOrderBtn" style="width: auto; padding: 10px 30px; background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); margin-top: 0;">
+                            <span class="btn-text">Print</span>
+                        </button>
+                        <button type="submit" class="btn" id="saveOrderBtn" style="width: auto; padding: 10px 30px; margin-top: 0;">
+                            <span class="btn-text">Save</span>
+                            <span class="loader"></span>
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>

@@ -24,7 +24,6 @@ let currentStatus = '';
 const orderTableBody = document.getElementById('orderTableBody');
 const searchOrderInput = document.getElementById('searchOrderInput');
 const searchOrderBtn = document.getElementById('searchOrderBtn');
-const statusFilter = document.getElementById('statusFilter');
 const resetFilterBtn = document.getElementById('resetFilterBtn');
 const addOrderBtn = document.getElementById('addOrderBtn');
 const paginationContainer = document.getElementById('paginationContainer');
@@ -51,11 +50,16 @@ const transportNameInput = document.getElementById('transportName');
 const transportNumberInput = document.getElementById('transportNumber');
 const mobileInput = document.getElementById('mobile');
 const paymentMethodSelect = document.getElementById('paymentMethod');
-const statusSelect = document.getElementById('status');
 const notesTextarea = document.getElementById('notes');
 
 const addProductBtn = document.getElementById('addProductBtn');
 const productList = document.getElementById('productList');
+
+// Step Navigation
+const step1Container = document.getElementById('step1Container');
+const step2Container = document.getElementById('step2Container');
+const nextStepBtn = document.getElementById('nextStepBtn');
+const prevStepBtn = document.getElementById('prevStepBtn');
 
 // Utility: Toast Notifications
 function showToast(message, type = 'success') {
@@ -234,6 +238,32 @@ productList.addEventListener('click', (e) => {
     }
 });
 
+// Step Navigation Logic
+nextStepBtn.addEventListener('click', () => {
+    const requiredInputs = step1Container.querySelectorAll('input[required], select[required]');
+    let isValid = true;
+    for (const input of requiredInputs) {
+        const parentEditOnly = input.closest('.edit-only-field');
+        if (parentEditOnly && parentEditOnly.style.display === 'none') {
+            continue;
+        }
+        if (!input.checkValidity()) {
+            input.reportValidity();
+            isValid = false;
+            break;
+        }
+    }
+    if (isValid) {
+        step1Container.style.display = 'none';
+        step2Container.style.display = 'block';
+    }
+});
+
+prevStepBtn.addEventListener('click', () => {
+    step1Container.style.display = 'block';
+    step2Container.style.display = 'none';
+});
+
 // Fetch and Render Orders Table
 async function loadOrders(page = 1, search = '', status = '') {
     try {
@@ -271,18 +301,12 @@ function renderTable(data) {
     orderTableBody.innerHTML = '';
     
     if (data.length === 0) {
-        orderTableBody.innerHTML = `<tr><td colspan="5" class="text-center">No orders found</td></tr>`;
+        orderTableBody.innerHTML = `<tr><td colspan="4" class="text-center">No orders found</td></tr>`;
         return;
     }
     
     data.forEach(order => {
         const tr = document.createElement('tr');
-        
-        // Format Status Badge
-        let statusClass = 'status-pending';
-        if (order.status === 'In Review') statusClass = 'status-in-review';
-        else if (order.status === 'Bill Sent') statusClass = 'status-bill-sent';
-        else if (order.status === 'Completed') statusClass = 'status-completed';
         
         // Party sub-details
         const partyName = order.party ? order.party.name : 'Unknown Party';
@@ -307,9 +331,6 @@ function renderTable(data) {
             <td>
                 <div style="font-weight: 500;">${order.transport_name || '-'}</div>
                 <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">${order.transport_number || '-'}</div>
-            </td>
-            <td>
-                <span class="status-badge ${statusClass}">${order.status}</span>
             </td>
             <td>
                 <button class="btn-icon edit-btn" onclick="openEditModal(${order.id})">Edit</button>
@@ -366,6 +387,10 @@ function resetOrderForm() {
     orderForm.reset();
     orderIdInput.value = '';
     
+    // Reset to Step 1
+    step1Container.style.display = 'block';
+    step2Container.style.display = 'none';
+    
     // Set default date to today
     const today = new Date();
     orderDateInput.valueAsDate = today;
@@ -385,6 +410,8 @@ function resetOrderForm() {
 // Open Modal for Add
 addOrderBtn.addEventListener('click', async () => {
     modalTitle.textContent = 'Create New Order';
+    // Hide edit-only fields when creating a new order
+    document.querySelectorAll('.edit-only-field').forEach(el => el.style.display = 'none');
     await loadAvailableStocks();
     resetOrderForm();
     orderModal.classList.add('show');
@@ -399,6 +426,13 @@ closeModal.addEventListener('click', () => {
 window.openEditModal = async (id) => {
     const order = orders.find(o => o.id === id);
     if (!order) return;
+    
+    // Reset to Step 1 when editing
+    step1Container.style.display = 'block';
+    step2Container.style.display = 'none';
+    
+    // Show edit-only fields when editing an order
+    document.querySelectorAll('.edit-only-field').forEach(el => el.style.display = 'block');
     
     await loadAvailableStocks();
     
@@ -417,7 +451,6 @@ window.openEditModal = async (id) => {
     transportNameInput.value = order.transport_name || '';
     transportNumberInput.value = order.transport_number || '';
     paymentMethodSelect.value = order.payment_method;
-    statusSelect.value = order.status;
     notesTextarea.value = order.notes || '';
     
     // Clear and populate products
@@ -534,6 +567,8 @@ orderForm.addEventListener('submit', async (e) => {
         });
     });
 
+    const editId = orderIdInput.value;
+
     const orderData = {
         order_date: orderDateInput.value,
         party_id: partyNameSelect.value,
@@ -541,11 +576,10 @@ orderForm.addEventListener('submit', async (e) => {
         transport_name: transportNameInput.value.trim(),
         transport_number: transportNumberInput.value.trim(),
         payment_method: paymentMethodSelect.value,
-        status: statusSelect.value,
+        status: editId ? (orders.find(o => o.id == editId)?.status || 'Pending') : 'Pending',
         notes: notesTextarea.value.trim()
     };
     
-    const editId = orderIdInput.value;
     setLoading(saveOrderBtn, true);
     
     try {
@@ -591,7 +625,7 @@ printOrderBtn.addEventListener('click', () => {
 // Search & Filter Operations
 function handleFilterSearch() {
     currentSearch = searchOrderInput.value.trim();
-    currentStatus = statusFilter.value;
+    currentStatus = '';
     currentPage = 1; // Reset to page 1 on filter
     loadOrders(currentPage, currentSearch, currentStatus);
 }
@@ -602,11 +636,9 @@ searchOrderInput.addEventListener('keyup', (e) => {
         handleFilterSearch();
     }
 });
-statusFilter.addEventListener('change', handleFilterSearch);
 
 resetFilterBtn.addEventListener('click', () => {
     searchOrderInput.value = '';
-    statusFilter.value = '';
     currentSearch = '';
     currentStatus = '';
     currentPage = 1;
