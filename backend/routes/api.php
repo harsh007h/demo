@@ -7,12 +7,14 @@ use App\Http\Controllers\PartyController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\DashboardController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:api')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
     Route::apiResource('parties', PartyController::class);
     Route::get('/orders/stats', [OrderController::class, 'stats']);
     Route::apiResource('orders', OrderController::class);

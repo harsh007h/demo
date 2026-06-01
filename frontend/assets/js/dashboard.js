@@ -122,83 +122,44 @@ document.addEventListener('DOMContentLoaded', async () => {
             'Accept': 'application/json'
         };
 
-        // Fetch Order Stats (Total and Pending in a single call)
         try {
-            const res = await fetch(`${API_URL}/orders/stats`, { headers });
+            const res = await fetch(`${API_URL}/dashboard/stats`, { headers });
             if (res.ok) {
                 const data = await res.json();
+                
+                // Populate Total & Pending Orders
                 totalOrdersCount.textContent = data.total_orders !== undefined ? data.total_orders : 0;
                 pendingOrdersCount.textContent = data.pending_orders !== undefined ? data.pending_orders : 0;
-            } else {
-                totalOrdersCount.textContent = 'Error';
-                pendingOrdersCount.textContent = 'Error';
-            }
-        } catch (e) {
-            console.error('Error fetching order stats:', e);
-            totalOrdersCount.textContent = 'Error';
-            pendingOrdersCount.textContent = 'Error';
-        }
 
-        // Fetch Stock Alerts Count
-        try {
-            const res = await fetch(`${API_URL}/stocks/stats`, { headers });
-            if (res.ok) {
-                const data = await res.json();
+                // Populate Stock Alerts Count
                 const count = data.low_stock_count !== undefined ? data.low_stock_count : 0;
                 lowStockCountVal.textContent = count > 0 ? `${count} Items` : '0 Items';
                 lowStockCountVal.style.color = count > 0 ? 'var(--error-color)' : '#10b981';
-            } else {
-                lowStockCountVal.textContent = 'Error';
-            }
-        } catch (e) {
-            console.error('Error fetching stock stats:', e);
-            lowStockCountVal.textContent = 'Error';
-        }
 
-        // Fetch Total Parties Count
-        try {
-            const res = await fetch(`${API_URL}/parties?per_page=1`, { headers });
-            if (res.ok) {
-                const data = await res.json();
-                totalPartiesCount.textContent = data.total !== undefined ? data.total : 0;
-            } else {
-                totalPartiesCount.textContent = 'Error';
-            }
-        } catch (e) {
-            console.error('Error fetching party stats:', e);
-            totalPartiesCount.textContent = 'Error';
-        }
+                // Populate Total Parties
+                totalPartiesCount.textContent = data.total_parties !== undefined ? data.total_parties : 0;
 
-        // Fetch Recent Orders (latest 5)
-        try {
-            const res = await fetch(`${API_URL}/orders?per_page=5`, { headers });
-            if (res.ok) {
-                const paginated = await res.json();
-                const orders = paginated.data || [];
-                renderRecentOrders(orders);
-            } else {
-                recentOrdersBody.innerHTML = `<tr><td colspan="4" class="text-center" style="padding: 24px; color: var(--error-color);">Error loading recent orders</td></tr>`;
-            }
-        } catch (e) {
-            console.error('Error fetching recent orders:', e);
-            recentOrdersBody.innerHTML = `<tr><td colspan="4" class="text-center" style="padding: 24px; color: var(--error-color);">Network error</td></tr>`;
-        }
+                // Render Recent Orders
+                renderRecentOrders(data.recent_orders || []);
 
-        // Fetch Low Stock details
-        try {
-            const res = await fetch(`${API_URL}/stocks?per_page=100`, { headers });
-            if (res.ok) {
-                const paginated = await res.json();
-                const stocks = paginated.data || [];
-                const lowStockItems = stocks.filter(stock => stock.quantity < 10);
-                renderLowStockDetails(lowStockItems);
+                // Render Low Stock Details
+                renderLowStockDetails(data.low_stock_items || []);
             } else {
-                lowStockDetailsContainer.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--error-color);">Error loading low stock details</div>`;
+                setErrorStates();
             }
         } catch (e) {
-            console.error('Error fetching low stock details:', e);
-            lowStockDetailsContainer.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--error-color);">Network error</div>`;
+            console.error('Error fetching dashboard stats:', e);
+            setErrorStates();
         }
+    }
+
+    function setErrorStates() {
+        totalOrdersCount.textContent = 'Error';
+        pendingOrdersCount.textContent = 'Error';
+        lowStockCountVal.textContent = 'Error';
+        totalPartiesCount.textContent = 'Error';
+        recentOrdersBody.innerHTML = `<tr><td colspan="4" class="text-center" style="padding: 24px; color: var(--error-color);">Error loading recent orders</td></tr>`;
+        lowStockDetailsContainer.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--error-color);">Error loading low stock details</div>`;
     }
 
     try {
