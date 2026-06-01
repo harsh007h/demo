@@ -12,31 +12,49 @@ const headers = {
     'Content-Type': 'application/json'
 };
 
-// DOM Elements
+// State Variables
+let parties = [];
+let orders = [];
+let currentPage = 1;
+let currentSearch = '';
+let currentStatus = '';
+
+// DOM Elements - List & Filter View
+const orderTableBody = document.getElementById('orderTableBody');
+const searchOrderInput = document.getElementById('searchOrderInput');
+const searchOrderBtn = document.getElementById('searchOrderBtn');
+const statusFilter = document.getElementById('statusFilter');
+const resetFilterBtn = document.getElementById('resetFilterBtn');
+const addOrderBtn = document.getElementById('addOrderBtn');
+const paginationContainer = document.getElementById('paginationContainer');
+const toastContainer = document.getElementById('toastContainer');
+
+// DOM Elements - Modal & Form View
+const orderModal = document.getElementById('orderModal');
+const closeModal = document.getElementById('closeModal');
 const orderForm = document.getElementById('orderForm');
+const modalTitle = document.getElementById('modalTitle');
+const saveOrderBtn = document.getElementById('saveOrderBtn');
+const printOrderBtn = document.getElementById('printOrderBtn');
+const addPartyRedirectBtn = document.getElementById('addPartyRedirectBtn');
+
+// Form Fields
+const orderIdInput = document.getElementById('orderId');
+const orderDateInput = document.getElementById('orderDate');
 const partyNameSelect = document.getElementById('partyName');
-const mobileInput = document.getElementById('mobile');
 const stateInput = document.getElementById('state');
 const cityInput = document.getElementById('city');
 const pincodeInput = document.getElementById('pincode');
 const addressInput = document.getElementById('address');
-const saveOrderBtn = document.getElementById('saveOrderBtn');
-const printOrderBtn = document.getElementById('printOrderBtn');
-const toastContainer = document.getElementById('toastContainer');
-const addPartyRedirectBtn = document.getElementById('addPartyRedirectBtn');
+const transportNameInput = document.getElementById('transportName');
+const transportNumberInput = document.getElementById('transportNumber');
+const mobileInput = document.getElementById('mobile');
+const paymentMethodSelect = document.getElementById('paymentMethod');
+const statusSelect = document.getElementById('status');
+const notesTextarea = document.getElementById('notes');
 
-// Set default date and minimum date to today
-const today = new Date();
-const dateInput = document.getElementById('orderDate');
-dateInput.valueAsDate = today;
-
-// Format today's date as YYYY-MM-DD for the min attribute
-const yyyy = today.getFullYear();
-const mm = String(today.getMonth() + 1).padStart(2, '0');
-const dd = String(today.getDate()).padStart(2, '0');
-dateInput.min = `${yyyy}-${mm}-${dd}`;
-
-let parties = [];
+const addProductBtn = document.getElementById('addProductBtn');
+const productList = document.getElementById('productList');
 
 // Utility: Toast Notifications
 function showToast(message, type = 'success') {
@@ -69,6 +87,7 @@ function showToast(message, type = 'success') {
 
 // Utility: Button Loading State
 function setLoading(btnElement, isLoading) {
+    if (!btnElement) return;
     if (isLoading) {
         btnElement.classList.add('loading');
         btnElement.disabled = true;
@@ -81,11 +100,13 @@ function setLoading(btnElement, isLoading) {
 // Load Parties for Dropdown
 async function loadParties() {
     try {
-        // Fetch all parties for the dropdown
         const response = await fetch(`${API_URL}/parties?per_page=100`, { headers });
         if (response.ok) {
             const data = await response.json();
-            parties = data.data || data; // Handle depending on API structure
+            parties = data.data || data; // Handle paginated or flat data
+            
+            // Clear current options (except placeholder)
+            partyNameSelect.innerHTML = '<option value="" disabled selected>Select Party</option>';
             
             parties.forEach(party => {
                 const option = document.createElement('option');
@@ -113,13 +134,17 @@ partyNameSelect.addEventListener('change', (e) => {
         pincodeInput.value = selectedParty.pincode || '';
         addressInput.value = selectedParty.address || '';
     } else {
-        mobileInput.value = '';
-        stateInput.value = '';
-        cityInput.value = '';
-        pincodeInput.value = '';
-        addressInput.value = '';
+        clearPartyFields();
     }
 });
+
+function clearPartyFields() {
+    mobileInput.value = '';
+    stateInput.value = '';
+    cityInput.value = '';
+    pincodeInput.value = '';
+    addressInput.value = '';
+}
 
 // Redirect to add party page in a new tab
 if (addPartyRedirectBtn) {
@@ -128,36 +153,36 @@ if (addPartyRedirectBtn) {
     });
 }
 
-// Dynamic Products Logic
-const addProductBtn = document.getElementById('addProductBtn');
-const productList = document.getElementById('productList');
-
-addProductBtn.addEventListener('click', () => {
+// Dynamic Products Logic (Add blank row)
+function createBlankProductRow(serial = '', size = 'M', pieces = 1) {
     const row = document.createElement('div');
     row.className = 'product-row';
     row.style.cssText = 'display: flex; gap: 16px; margin-bottom: 16px; align-items: center;';
     
     row.innerHTML = `
         <div style="flex: 2;">
-            <input type="text" class="serialNo" required placeholder="Serial No" style="margin-bottom: 0;">
+            <input type="text" class="serialNo" required placeholder="Serial No" value="${serial}" style="margin-bottom: 0;">
         </div>
         <div style="flex: 1;">
             <select class="size" required style="margin-bottom: 0;">
-                <option value="M" selected>M</option>
-                <option value="L">L</option>
-                <option value="XL">XL</option>
-                <option value="XXL">XXL</option>
+                <option value="M" ${size === 'M' ? 'selected' : ''}>M</option>
+                <option value="L" ${size === 'L' ? 'selected' : ''}>L</option>
+                <option value="XL" ${size === 'XL' ? 'selected' : ''}>XL</option>
+                <option value="XXL" ${size === 'XXL' ? 'selected' : ''}>XXL</option>
             </select>
         </div>
         <div style="flex: 1;">
-            <input type="number" class="pieces" required value="1" min="1" style="margin-bottom: 0;">
+            <input type="number" class="pieces" required value="${pieces}" min="1" style="margin-bottom: 0;">
         </div>
         <div>
             <button type="button" class="btn remove-product-btn" style="background: #ef4444; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: bold; border: none; flex-shrink: 0;">X</button>
         </div>
     `;
-    
     productList.appendChild(row);
+}
+
+addProductBtn.addEventListener('click', () => {
+    createBlankProductRow();
 });
 
 // Remove Product Row
@@ -172,47 +197,329 @@ productList.addEventListener('click', (e) => {
     }
 });
 
-// Form Submit
+// Fetch and Render Orders Table
+async function loadOrders(page = 1, search = '', status = '') {
+    try {
+        setLoading(searchOrderBtn, true);
+        
+        let url = `${API_URL}/orders?page=${page}`;
+        if (search) {
+            url += `&search=${encodeURIComponent(search)}`;
+        }
+        if (status) {
+            url += `&status=${encodeURIComponent(status)}`;
+        }
+
+        const response = await fetch(url, { headers });
+        if (response.ok) {
+            const data = await response.json();
+            orders = data.data; // paginated items
+            renderTable(orders);
+            renderPagination(data);
+        } else if (response.status === 401) {
+            localStorage.removeItem('api_token');
+            window.location.href = 'login.html';
+        } else {
+            showToast('Failed to load orders', 'error');
+        }
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        showToast('Network error while loading orders', 'error');
+    } finally {
+        setLoading(searchOrderBtn, false);
+    }
+}
+
+function renderTable(data) {
+    orderTableBody.innerHTML = '';
+    
+    if (data.length === 0) {
+        orderTableBody.innerHTML = `<tr><td colspan="5" class="text-center">No orders found</td></tr>`;
+        return;
+    }
+    
+    data.forEach(order => {
+        const tr = document.createElement('tr');
+        
+        // Format Status Badge
+        let statusClass = 'status-pending';
+        if (order.status === 'In Review') statusClass = 'status-in-review';
+        else if (order.status === 'Bill Sent') statusClass = 'status-bill-sent';
+        else if (order.status === 'Completed') statusClass = 'status-completed';
+        
+        // Party sub-details
+        const partyName = order.party ? order.party.name : 'Unknown Party';
+        const partySub = order.party ? `${order.party.mobile} • ${order.party.city}` : 'No Details';
+        
+        // Format Date nicely
+        let formattedDate = order.order_date;
+        try {
+            const d = new Date(order.order_date);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            formattedDate = `${day}-${month}-${year}`;
+        } catch(e) {}
+
+        tr.innerHTML = `
+            <td>
+                <div style="font-weight: 600; color: white;">${partyName}</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">${partySub}</div>
+            </td>
+            <td>${formattedDate}</td>
+            <td>
+                <div style="font-weight: 500;">${order.transport_name || '-'}</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">${order.transport_number || '-'}</div>
+            </td>
+            <td>
+                <span class="status-badge ${statusClass}">${order.status}</span>
+            </td>
+            <td>
+                <button class="btn-icon edit-btn" onclick="openEditModal(${order.id})">Edit</button>
+                <button class="btn-icon" style="color: #10b981; background: rgba(16, 185, 129, 0.1);" onclick="printOrderDirect(${order.id})">Print</button>
+                <button class="btn-icon delete-btn" id="delBtn_${order.id}" onclick="deleteOrder(${order.id})">Delete</button>
+            </td>
+        `;
+        orderTableBody.appendChild(tr);
+    });
+}
+
+function renderPagination(meta) {
+    paginationContainer.innerHTML = '';
+    
+    if (meta.last_page <= 1) return;
+
+    // Previous Button
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'page-btn';
+    prevBtn.textContent = 'Prev';
+    prevBtn.disabled = meta.current_page === 1;
+    prevBtn.onclick = () => {
+        currentPage = meta.current_page - 1;
+        loadOrders(currentPage, currentSearch, currentStatus);
+    };
+    paginationContainer.appendChild(prevBtn);
+
+    // Page Numbers
+    for (let i = 1; i <= meta.last_page; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `page-btn ${meta.current_page === i ? 'active' : ''}`;
+        pageBtn.textContent = i;
+        pageBtn.onclick = () => {
+            currentPage = i;
+            loadOrders(currentPage, currentSearch, currentStatus);
+        };
+        paginationContainer.appendChild(pageBtn);
+    }
+
+    // Next Button
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'page-btn';
+    nextBtn.textContent = 'Next';
+    nextBtn.disabled = meta.current_page === meta.last_page;
+    nextBtn.onclick = () => {
+        currentPage = meta.current_page + 1;
+        loadOrders(currentPage, currentSearch, currentStatus);
+    };
+    paginationContainer.appendChild(nextBtn);
+}
+
+// Reset form and set default date
+function resetOrderForm() {
+    orderForm.reset();
+    orderIdInput.value = '';
+    
+    // Set default date to today
+    const today = new Date();
+    orderDateInput.valueAsDate = today;
+    
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    orderDateInput.min = `${yyyy}-${mm}-${dd}`;
+    
+    // Clear product list and put one empty row
+    productList.innerHTML = '';
+    createBlankProductRow();
+    
+    clearPartyFields();
+}
+
+// Open Modal for Add
+addOrderBtn.addEventListener('click', () => {
+    modalTitle.textContent = 'Create New Order';
+    resetOrderForm();
+    orderModal.classList.add('show');
+});
+
+// Close Modal
+closeModal.addEventListener('click', () => {
+    orderModal.classList.remove('show');
+});
+
+// Open Modal for Edit
+window.openEditModal = (id) => {
+    const order = orders.find(o => o.id === id);
+    if (!order) return;
+    
+    modalTitle.textContent = 'Edit Order';
+    orderIdInput.value = order.id;
+    orderDateInput.value = order.order_date;
+    
+    // Select party and fill fields
+    partyNameSelect.value = order.party_id;
+    mobileInput.value = order.party ? order.party.mobile : '';
+    stateInput.value = order.party ? order.party.state : '';
+    cityInput.value = order.party ? order.party.city : '';
+    pincodeInput.value = order.party ? order.party.pincode : '';
+    addressInput.value = order.party ? order.party.address : '';
+    
+    transportNameInput.value = order.transport_name || '';
+    transportNumberInput.value = order.transport_number || '';
+    paymentMethodSelect.value = order.payment_method;
+    statusSelect.value = order.status;
+    notesTextarea.value = order.notes || '';
+    
+    // Clear and populate products
+    productList.innerHTML = '';
+    if (order.items && order.items.length > 0) {
+        order.items.forEach(item => {
+            createBlankProductRow(item.serial_no, item.size, item.pieces);
+        });
+    } else {
+        createBlankProductRow();
+    }
+    
+    orderModal.classList.add('show');
+};
+
+// Print Directly from list row
+window.printOrderDirect = (id) => {
+    const order = orders.find(o => o.id === id);
+    if (!order) return;
+    
+    // Populate form so print media queries capture it perfectly
+    window.openEditModal(id);
+    
+    // Wait briefly for UI to update, trigger print, and then optionally close
+    setTimeout(() => {
+        window.print();
+    }, 150);
+};
+
+// Delete Order
+window.deleteOrder = async (id) => {
+    if (confirm('Are you sure you want to delete this order?')) {
+        const delBtn = document.getElementById(`delBtn_${id}`);
+        if (delBtn) delBtn.disabled = true;
+
+        try {
+            const response = await fetch(`${API_URL}/orders/${id}`, {
+                method: 'DELETE',
+                headers
+            });
+            if (response.ok) {
+                showToast('Order deleted successfully!', 'success');
+                loadOrders(currentPage, currentSearch, currentStatus);
+            } else {
+                showToast('Failed to delete order.', 'error');
+                if (delBtn) delBtn.disabled = false;
+            }
+        } catch (error) {
+            console.error('Error deleting order:', error);
+            showToast('Network error while deleting.', 'error');
+            if (delBtn) delBtn.disabled = false;
+        }
+    }
+};
+
+// Form Validation
+function validateForm() {
+    if (!partyNameSelect.value) {
+        showToast('Please select a Party.', 'error');
+        return false;
+    }
+    if (!mobileInput.value.trim()) {
+        showToast('Mobile number is required.', 'error');
+        return false;
+    }
+    
+    // Check product rows
+    const rows = productList.querySelectorAll('.product-row');
+    if (rows.length === 0) {
+        showToast('At least one product is required.', 'error');
+        return false;
+    }
+    
+    let valid = true;
+    rows.forEach(row => {
+        const serial = row.querySelector('.serialNo').value.trim();
+        const pieces = row.querySelector('.pieces').value;
+        if (!serial) {
+            showToast('Serial number is required for all product rows.', 'error');
+            valid = false;
+        }
+        if (!pieces || pieces < 1) {
+            showToast('Pieces must be greater than or equal to 1.', 'error');
+            valid = false;
+        }
+    });
+
+    return valid;
+}
+
+// Handle Form Submit (Add/Edit)
 orderForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
+    if (!validateForm()) return;
+
     // Collect products
     const products = [];
     document.querySelectorAll('.product-row').forEach(row => {
         products.push({
             serial_no: row.querySelector('.serialNo').value.trim(),
             size: row.querySelector('.size').value,
-            pieces: row.querySelector('.pieces').value
+            pieces: parseInt(row.querySelector('.pieces').value, 10)
         });
     });
 
-    const paymentMethod = document.getElementById('paymentMethod').value;
-    const transportNumberEl = document.getElementById('transportNumber');
-
     const orderData = {
-        order_date: document.getElementById('orderDate').value,
+        order_date: orderDateInput.value,
         party_id: partyNameSelect.value,
         products: products,
-        transport_name: document.getElementById('transportName').value.trim(),
-        transport_number: transportNumberEl ? transportNumberEl.value.trim() : '',
-        payment_method: paymentMethod,
-        status: document.getElementById('status').value,
-        notes: document.getElementById('notes').value.trim()
+        transport_name: transportNameInput.value.trim(),
+        transport_number: transportNumberInput.value.trim(),
+        payment_method: paymentMethodSelect.value,
+        status: statusSelect.value,
+        notes: notesTextarea.value.trim()
     };
-
+    
+    const editId = orderIdInput.value;
     setLoading(saveOrderBtn, true);
-
+    
     try {
-        const response = await fetch(`${API_URL}/orders`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(orderData)
-        });
+        let response;
+        if (editId) {
+            // Update existing
+            response = await fetch(`${API_URL}/orders/${editId}`, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify(orderData)
+            });
+        } else {
+            // Add new
+            response = await fetch(`${API_URL}/orders`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(orderData)
+            });
+        }
 
         if (response.ok || response.status === 201) {
-            showToast('Order created successfully!', 'success');
-            orderForm.reset();
-            document.getElementById('orderDate').valueAsDate = new Date(); // reset date to today
+            showToast(editId ? 'Order updated successfully!' : 'Order added successfully!', 'success');
+            orderModal.classList.remove('show');
+            loadOrders(currentPage, currentSearch, currentStatus);
         } else {
             const errorData = await response.json();
             console.error('Validation Error:', errorData);
@@ -226,12 +533,38 @@ orderForm.addEventListener('submit', async (e) => {
     }
 });
 
-// Print Button
+// Print Button inside Modal
 printOrderBtn.addEventListener('click', () => {
     window.print();
 });
 
-// Initial Load
+// Search & Filter Operations
+function handleFilterSearch() {
+    currentSearch = searchOrderInput.value.trim();
+    currentStatus = statusFilter.value;
+    currentPage = 1; // Reset to page 1 on filter
+    loadOrders(currentPage, currentSearch, currentStatus);
+}
+
+searchOrderBtn.addEventListener('click', handleFilterSearch);
+searchOrderInput.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') {
+        handleFilterSearch();
+    }
+});
+statusFilter.addEventListener('change', handleFilterSearch);
+
+resetFilterBtn.addEventListener('click', () => {
+    searchOrderInput.value = '';
+    statusFilter.value = '';
+    currentSearch = '';
+    currentStatus = '';
+    currentPage = 1;
+    loadOrders(currentPage, currentSearch, currentStatus);
+});
+
+// Initial Setup
 document.addEventListener('DOMContentLoaded', () => {
     loadParties();
+    loadOrders(currentPage, currentSearch, currentStatus);
 });

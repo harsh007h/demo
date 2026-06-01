@@ -15,9 +15,28 @@ class OrderController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::with(['party', 'items'])->orderBy('id', 'desc')->paginate(10);
+        $query = Order::with(['party', 'items']);
+        
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('transport_name', 'LIKE', "%{$search}%")
+                  ->orWhere('transport_number', 'LIKE', "%{$search}%")
+                  ->orWhere('notes', 'LIKE', "%{$search}%")
+                  ->orWhereHas('party', function($qp) use ($search) {
+                      $qp->where('name', 'LIKE', "%{$search}%")
+                        ->orWhere('mobile', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+        
+        if ($request->has('status') && !empty($request->status)) {
+            $query->where('status', $request->status);
+        }
+
+        $orders = $query->orderBy('id', 'desc')->paginate(10);
         return response()->json($orders);
     }
 
