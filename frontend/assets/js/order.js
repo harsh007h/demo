@@ -689,18 +689,138 @@ window.openEditModal = (id) => {
     orderModal.classList.add('show');
 };
 
+// Generate Beautiful Custom Printable Receipt HTML
+function updatePrintLayout(data) {
+    const container = document.getElementById('printableOrderReceipt');
+    if (!container) return;
+    
+    // Format Date
+    let formattedDate = data.order_date;
+    try {
+        const d = new Date(data.order_date);
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        formattedDate = `${day}-${month}-${year}`;
+    } catch(e) {}
+
+    // Calculate total pieces
+    const totalPieces = data.items.reduce((sum, item) => sum + (parseInt(item.pieces, 10) || 0), 0);
+
+    // Build items rows
+    let itemsHTML = '';
+    data.items.forEach((item, index) => {
+        itemsHTML += `
+            <tr>
+                <td style="width: 8%; text-align: center;">${index + 1}</td>
+                <td style="font-weight: 600;">${item.serial_no}</td>
+                <td style="width: 15%; text-align: center; font-weight: 600;">${item.size}</td>
+                <td style="width: 20%; text-align: right; font-weight: 600; padding-right: 24px;">${item.pieces}</td>
+            </tr>
+        `;
+    });
+
+    container.innerHTML = `
+        <div class="invoice-header">
+            <div class="invoice-logo-title">
+                <h1>ORDER RECEIPT</h1>
+                <p>Order Information & Dispatch Slip</p>
+            </div>
+            <div class="invoice-details">
+                <h2>ORDER #${data.id}</h2>
+                <p><strong>Date:</strong> ${formattedDate}</p>
+                <p><strong>Status:</strong> Pending</p>
+            </div>
+        </div>
+        
+        <div class="invoice-grid">
+            <div class="invoice-col">
+                <h3>Billed To (Customer)</h3>
+                <p><strong>Name:</strong> ${data.party_name}</p>
+                <p><strong>Mobile:</strong> ${data.mobile || '-'}</p>
+                <p><strong>Address:</strong> ${data.address || '-'}</p>
+                <p><strong>City/State:</strong> ${data.city || '-'} / ${data.state || '-'} ${data.pincode ? `(${data.pincode})` : ''}</p>
+            </div>
+            <div class="invoice-col">
+                <h3>Transport & Payment</h3>
+                <p><strong>Transport:</strong> ${data.transport_name || '-'}</p>
+                ${data.transport_number ? `<p><strong>Vehicle No:</strong> ${data.transport_number}</p>` : ''}
+                <p><strong>Payment Method:</strong> ${data.payment_method || '-'}</p>
+            </div>
+        </div>
+        
+        <table class="invoice-table">
+            <thead>
+                <tr>
+                    <th style="text-align: center;">Sr No.</th>
+                    <th>Product Details</th>
+                    <th style="text-align: center;">Size</th>
+                    <th style="text-align: right; padding-right: 24px;">Pieces</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${itemsHTML}
+                <tr class="total-row">
+                    <td colspan="3" style="text-align: right; font-weight: 700; padding-right: 20px;">Total Qty (Pieces):</td>
+                    <td style="text-align: right; font-weight: 700; padding-right: 24px;">${totalPieces}</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        ${data.notes ? `
+        <div class="invoice-notes">
+            <h4>Additional Notes / Instructions</h4>
+            <p>${data.notes.replace(/\n/g, '<br>')}</p>
+        </div>
+        ` : ''}
+        
+        <div class="invoice-footer">
+            <div>
+                <p>Thank you for your business!</p>
+                <p style="font-size: 10px; margin-top: 5px;">Printed on: ${new Date().toLocaleString()}</p>
+            </div>
+            <div class="signature-block">
+                <div class="signature-line"></div>
+                <div class="signature-title">Authorized Signatory</div>
+            </div>
+        </div>
+    `;
+}
+
 // Print Directly from list row
 window.printOrderDirect = (id) => {
     const order = orders.find(o => o.id === id);
     if (!order) return;
     
-    // Populate form so print media queries capture it perfectly
-    window.openEditModal(id);
+    // Build direct printable layout data structure without opening modal
+    const items = (order.items || []).map(item => ({
+        serial_no: item.serial_no,
+        size: item.size,
+        pieces: item.pieces
+    }));
     
-    // Wait briefly for UI to update, trigger print, and then optionally close
+    const printData = {
+        id: order.id,
+        order_date: order.order_date,
+        party_name: order.party ? order.party.name : 'Unknown Party',
+        mobile: order.party ? order.party.mobile : '',
+        state: order.party ? order.party.state : '',
+        city: order.party ? order.party.city : '',
+        pincode: order.party ? order.party.pincode : '',
+        address: order.party ? order.party.address : '',
+        transport_name: order.transport_name || '',
+        transport_number: order.transport_number || '',
+        payment_method: order.payment_method || 'Cash',
+        notes: order.notes || '',
+        items: items
+    };
+    
+    updatePrintLayout(printData);
+    
+    // Wait briefly for UI to draw print layout, then print
     setTimeout(() => {
         window.print();
-    }, 150);
+    }, 50);
 };
 
 // Reusable Custom Confirm Modal
@@ -905,6 +1025,54 @@ orderForm.addEventListener('submit', async (e) => {
 
 // Print Button inside Modal
 printOrderBtn.addEventListener('click', () => {
+    const editId = orderIdInput.value;
+    const partySearchInput = document.getElementById('partySearchInput');
+    
+    // Parse party name from search input or select
+    let partyNameText = '';
+    if (partySearchInput) {
+        partyNameText = partySearchInput.value.split('(')[0].trim();
+    }
+    if (!partyNameText && partyNameSelect.value) {
+        const selParty = parties.find(p => p.id == partyNameSelect.value);
+        if (selParty) partyNameText = selParty.name;
+    }
+    if (!partyNameText) partyNameText = 'Unknown Party';
+    
+    // Gather products from UI rows
+    const items = [];
+    document.querySelectorAll('.product-row').forEach(row => {
+        const serial = row.querySelector('.serialNo').value;
+        const sz = row.querySelector('.size').value;
+        const pcs = parseInt(row.querySelector('.pieces').value, 10);
+        if (serial && sz && pcs) {
+            items.push({
+                serial_no: serial,
+                size: sz,
+                pieces: pcs
+            });
+        }
+    });
+    
+    const printData = {
+        id: editId || 'NEW',
+        order_date: orderDateInput.value,
+        party_name: partyNameText,
+        mobile: mobileInput.value,
+        state: stateInput.value,
+        city: cityInput.value,
+        pincode: pincodeInput.value,
+        address: addressInput.value,
+        transport_name: transportNameInput.value,
+        transport_number: transportNumberInput.value,
+        payment_method: paymentMethodSelect.value,
+        notes: notesTextarea.value,
+        items: items
+    };
+    
+    updatePrintLayout(printData);
+    
+    // Trigger print
     window.print();
 });
 
