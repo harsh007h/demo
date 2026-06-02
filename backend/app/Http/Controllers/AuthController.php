@@ -15,12 +15,18 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
+        $loginInput = $request->input('email');
+        
+        // Auto-detect if input is email or mobile number
+        $isEmail = filter_var($loginInput, FILTER_VALIDATE_EMAIL);
+        $fieldType = $isEmail ? 'email' : 'mobile';
+
         $request->validate([
-            'email' => 'required|email',
+            'email' => 'required',
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where($fieldType, $loginInput)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([

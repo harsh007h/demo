@@ -773,3 +773,189 @@ body.dashboard-page {
   margin-top: 4px;
 }
 
+/* Advanced Login Elements */
+.form-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.form-label-row label {
+  margin-bottom: 0;
+}
+
+.forgot-password-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.forgot-password-link:hover {
+  color: white;
+  text-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+}
+
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-wrapper input {
+  padding-right: 48px; /* space for eye icon */
+}
+
+/* Hide browser native password reveal/clear buttons (e.g. Edge) */
+.password-wrapper input::-ms-reveal,
+.password-wrapper input::-ms-clear {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: color 0.3s ease;
+  outline: none;
+}
+
+.password-toggle-btn:hover {
+  color: white;
+}
+
+.password-toggle-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Custom Checkbox Design */
+.form-options {
+  margin-top: 15px;
+  margin-bottom: 20px;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+  color: var(--text-secondary);
+  gap: 10px;
+}
+
+.checkbox-container input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkbox-checkmark {
+  height: 20px;
+  width: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.checkbox-container:hover input ~ .checkbox-checkmark {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: var(--primary-color);
+}
+
+.checkbox-container input:checked ~ .checkbox-checkmark {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+}
+
+.checkbox-checkmark::after {
+  content: "";
+  display: none;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-bottom: 2px;
+}
+
+.checkbox-container input:checked ~ .checkbox-checkmark::after {
+  display: block;
+}
+
+/* Button Icon Animation */
+.btn-icon-right {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.5;
+  transition: transform 0.3s ease;
+}
+
+.btn:hover .btn-icon-right {
+  transform: translateX(4px);
+}
+
+.btn.loading .btn-icon-right {
+  display: none;
+}
+
+/* OTP Toggle Styling */
+.otp-toggle-container {
+  text-align: center;
+  margin-top: 24px;
+}
+
+.otp-toggle-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.otp-toggle-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background-color: var(--primary-color);
+  transition: width 0.3s ease;
+}
+
+.otp-toggle-link:hover {
+  color: white;
+  text-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+}
+
+.otp-toggle-link:hover::after {
+  width: 100%;
+  background-color: white;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+}
+
+
