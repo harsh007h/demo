@@ -380,14 +380,21 @@ function getProductOptionHTML(selectedProduct = '') {
 }
 
 // Generate static size options
-function getSizeOptionHTML(selectedSize = '') {
-    const standardSizes = ['M', 'L', 'XL', 'XXL'];
+function getSizeOptionHTML(productName = '', selectedSize = '') {
+    const lowerName = String(productName || '').toLowerCase();
+    let sizes = ['M', 'L', 'XL', 'XXL']; // default sizes
+    if (lowerName.includes('shirt')) {
+        sizes = ['M', 'L', 'XL', 'XXL'];
+    } else if (lowerName.includes('jeans')) {
+        sizes = ['32', '34', '36'];
+    }
+    
     let optionsHTML = '';
     
     optionsHTML += `<option value="" disabled ${!selectedSize ? 'selected' : ''}>Select Size</option>`;
     
-    standardSizes.forEach(sizeVal => {
-        const isSelected = selectedSize && sizeVal.toUpperCase() === selectedSize.toUpperCase();
+    sizes.forEach(sizeVal => {
+        const isSelected = selectedSize && sizeVal.toString().toUpperCase() === selectedSize.toString().toUpperCase();
         optionsHTML += `<option value="${sizeVal}" ${isSelected ? 'selected' : ''}>${sizeVal}</option>`;
     });
     
@@ -408,7 +415,7 @@ function createBlankProductRow(serial = '', size = '', pieces = '') {
         </div>
         <div style="flex: 1;">
             <select class="size" required style="margin-bottom: 0;">
-                ${getSizeOptionHTML(size)}
+                ${getSizeOptionHTML(serial, size)}
             </select>
         </div>
         <div style="flex: 1;">
@@ -433,6 +440,21 @@ productList.addEventListener('click', (e) => {
             e.target.closest('.product-row').remove();
         } else {
             showToast('At least one product is required.', 'error');
+        }
+    }
+});
+
+// Update sizes dynamically based on selected product (Shirt vs Jeans)
+productList.addEventListener('change', (e) => {
+    if (e.target.classList.contains('serialNo')) {
+        const row = e.target.closest('.product-row');
+        if (row) {
+            const sizeSelect = row.querySelector('.size');
+            if (sizeSelect) {
+                const productName = e.target.value;
+                const currentSelectedSize = sizeSelect.value;
+                sizeSelect.innerHTML = getSizeOptionHTML(productName, currentSelectedSize);
+            }
         }
     }
 });
