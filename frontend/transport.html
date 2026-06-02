@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transport Management - Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./assets/css/style.css">
+</head>
+<body class="dashboard-page">
+    <div class="bg-shape shape1"></div>
+    <div class="bg-shape shape2" style="background: #10b981;"></div>
+    
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar glass-card">
+            <div class="sidebar-header">
+                <h2>Admin</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html">Dashboard</a>
+                <a href="party.html">Parties</a>
+                <a href="order.html">Orders</a>
+                <a href="stock.html">Stock Management</a>
+                <a href="user.html">Users</a>
+                <a href="transport.html" class="active">Transports</a>
+            </nav>
+            <div style="margin-top: auto;">
+                <button class="btn btn-logout" id="logoutBtn">Log Out</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Navbar -->
+            <header class="top-navbar glass-card">
+                <div class="navbar-title" style="font-size: 18px; font-weight: 600;">Transport Management</div>
+                <div class="navbar-user" id="navbarActionContainer">
+                    <button class="btn" id="addTransportBtn" style="width: auto; margin-top: 0; padding: 10px 20px;">
+                        <span class="btn-text">+ Add Transport</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Search and Filter -->
+            <div class="glass-card" style="max-width: none; padding: 20px; display: flex; gap: 16px; margin-bottom: 24px;">
+                <input type="text" id="searchTransportInput" placeholder="Search Transport by Name..." style="flex: 1;">
+                <button class="btn" id="searchTransportBtn" style="width: auto; margin-top: 0; padding: 0 24px;">
+                    <span class="btn-text">Search</span>
+                    <span class="loader"></span>
+                </button>
+            </div>
+
+            <!-- Table -->
+            <div class="glass-card table-container" style="max-width: none; overflow-x: auto; padding: 0;">
+                <table class="custom-table">
+                    <thead>
+                        <tr id="tableHeaderRow">
+                            <th style="width: 80px;">Sr No</th>
+                            <th>Transport Name</th>
+                            <th>Created Date</th>
+                            <th id="actionHeader" style="width: 180px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transportTableBody">
+                        <!-- Data populated by JS -->
+                    </tbody>
+                </table>
+                <div id="paginationContainer" class="pagination-container">
+                    <!-- Pagination populated by JS -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for Add/Edit -->
+    <div id="transportModal" class="modal-overlay">
+        <div class="glass-card modal-content" style="max-width: 500px; width: 100%; margin: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <h3 id="modalTitle" style="color: white; font-size: 20px;">Add New Transport</h3>
+                <button id="closeModal" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            
+            <form id="transportForm">
+                <input type="hidden" id="transportId">
+                
+                <div class="form-group">
+                    <label for="transportNameInput">Transport Name</label>
+                    <input type="text" id="transportNameInput" required placeholder="Enter transport name">
+                </div>
+                
+                <button type="submit" class="btn" id="saveTransportBtn">
+                    <span class="btn-text">Save Transport</span>
+                    <span class="loader"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="./assets/js/transport.js"></script>
+</body>
+</html>

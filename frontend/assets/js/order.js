@@ -133,6 +133,32 @@ async function loadParties() {
     }
 }
 
+// Load Transports for Dropdown
+async function loadTransports() {
+    try {
+        const response = await fetch(`${API_URL}/transports?per_page=200`, { headers });
+        if (response.ok) {
+            const data = await response.json();
+            const transportList = data.data || data; // Handle paginated or flat data
+            
+            // Clear current options (except placeholder)
+            if (transportNameInput) {
+                transportNameInput.innerHTML = '<option value="" disabled selected>Select Transport</option>';
+                
+                transportList.forEach(transport => {
+                    const option = document.createElement('option');
+                    option.value = transport.transport_name;
+                    option.textContent = transport.transport_name;
+                    transportNameInput.appendChild(option);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching transports:', error);
+        showToast('Failed to load transport list', 'error');
+    }
+}
+
 // Render Custom Dropdown Items
 function renderCustomPartyDropdown(list) {
     const partyDropdown = document.getElementById('partyDropdown');
@@ -1122,5 +1148,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Load dropdown datasets in the background only AFTER the table renders
         loadParties();
         loadAvailableStocks();
+        loadTransports();
     });
 });

@@ -9,6 +9,7 @@ use App\Http\Controllers\StockController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OtpController;
+use App\Http\Controllers\TransportController;
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/send-otp', [OtpController::class, 'sendOtp']);
@@ -42,6 +43,14 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('/stocks/{stock}', [StockController::class, 'destroy']);
 
         Route::apiResource('users', UserController::class);
+    });
+
+    // Transports API
+    Route::get('/transports', [TransportController::class, 'index']);
+    Route::middleware('role:Admin')->group(function () {
+        Route::post('/transports', [TransportController::class, 'store']);
+        Route::put('/transports/{id}', [TransportController::class, 'update']);
+        Route::delete('/transports/{id}', [TransportController::class, 'destroy']);
     });
 });
 
