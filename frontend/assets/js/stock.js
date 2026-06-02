@@ -105,6 +105,13 @@ async function checkStats() {
 async function loadStocks(page = 1, search = '') {
     try {
         setLoading(searchStockBtn, true);
+        stockTableBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center" style="padding: 40px; color: var(--text-secondary);">
+                    <div class="loader" style="display: block; margin: 0 auto 12px; border-top-color: var(--primary-color);"></div>
+                    <div style="font-size: 14px; font-weight: 500;">Loading stocks...</div>
+                </td>
+            </tr>`;
         
         let url = `${API_URL}/stocks?page=${page}`;
         if (search) {

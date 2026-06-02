@@ -91,6 +91,13 @@ function setLoading(btnElement, isLoading) {
 async function loadUsers(page = 1, search = '') {
     try {
         setLoading(searchUserBtn, true);
+        userTableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center" style="padding: 40px; color: var(--text-secondary);">
+                    <div class="loader" style="display: block; margin: 0 auto 12px; border-top-color: var(--primary-color);"></div>
+                    <div style="font-size: 14px; font-weight: 500;">Loading users...</div>
+                </td>
+            </tr>`;
         
         let url = `${API_URL}/users?page=${page}`;
         if (search) {

@@ -110,6 +110,13 @@ async function loadParties(page = 1, search = '') {
         }
     } else {
         setLoading(searchPartyBtn, true);
+        partyTableBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center" style="padding: 40px; color: var(--text-secondary);">
+                    <div class="loader" style="display: block; margin: 0 auto 12px; border-top-color: var(--primary-color);"></div>
+                    <div style="font-size: 14px; font-weight: 500;">Loading parties...</div>
+                </td>
+            </tr>`;
     }
 
     try {

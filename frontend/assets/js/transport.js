@@ -10,6 +10,11 @@ if (!token) {
     window.location.href = 'login.html';
 }
 
+if (userRole !== 'Admin') {
+    alert('Access denied. Staff cannot access Transport Management.');
+    window.location.href = 'dashboard.html';
+}
+
 const headers = {
     'Authorization': `Bearer ${token}`,
     'Accept': 'application/json',
@@ -94,6 +99,13 @@ function configureAccessUI() {
 async function loadTransports(page = 1, search = '') {
     try {
         setLoading(searchTransportBtn, true);
+        transportTableBody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center" style="padding: 40px; color: var(--text-secondary);">
+                    <div class="loader" style="display: block; margin: 0 auto 12px; border-top-color: var(--primary-color);"></div>
+                    <div style="font-size: 14px; font-weight: 500;">Loading transports...</div>
+                </td>
+            </tr>`;
         
         let url = `${API_URL}/transports?page=${page}`;
         if (search) {

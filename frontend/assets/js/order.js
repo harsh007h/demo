@@ -489,6 +489,13 @@ async function loadOrders(page = 1, search = '', status = '') {
         }
     } else {
         setLoading(searchOrderBtn, true);
+        orderTableBody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center" style="padding: 40px; color: var(--text-secondary);">
+                    <div class="loader" style="display: block; margin: 0 auto 12px; border-top-color: var(--primary-color);"></div>
+                    <div style="font-size: 14px; font-weight: 500;">Loading orders...</div>
+                </td>
+            </tr>`;
     }
 
     try {
@@ -612,6 +619,24 @@ function renderPagination(meta) {
     paginationContainer.appendChild(nextBtn);
 }
 
+let datasetsLoaded = false;
+async function loadModalDatasets() {
+    if (datasetsLoaded) {
+        return;
+    }
+    
+    // Show a loading text in select dropdowns while fetching in background
+    if (partyNameSelect) partyNameSelect.innerHTML = '<option value="" disabled selected>Loading parties...</option>';
+    if (transportNameInput) transportNameInput.innerHTML = '<option value="" disabled selected>Loading transports...</option>';
+    
+    await Promise.all([
+        loadParties(),
+        loadAvailableStocks(true),
+        loadTransports()
+    ]);
+    datasetsLoaded = true;
+}
+
 // Reset form and set default date
 function resetOrderForm() {
     orderForm.reset();
@@ -645,11 +670,14 @@ function resetOrderForm() {
 }
 
 // Open Modal for Add
-addOrderBtn.addEventListener('click', () => {
+addOrderBtn.addEventListener('click', async () => {
     modalTitle.textContent = 'Create New Order';
     // Hide edit-only fields when creating a new order
     document.querySelectorAll('.edit-only-field').forEach(el => el.style.display = 'none');
-    loadAvailableStocks(true);
+    
+    // Trigger modal dataset loading in parallel
+    loadModalDatasets();
+    
     resetOrderForm();
     orderModal.classList.add('show');
 });
@@ -660,7 +688,7 @@ closeModal.addEventListener('click', () => {
 });
 
 // Open Modal for Edit
-window.openEditModal = (id) => {
+window.openEditModal = async (id) => {
     const order = orders.find(o => o.id === id);
     if (!order) return;
     
@@ -671,11 +699,12 @@ window.openEditModal = (id) => {
     // Show edit-only fields when editing an order
     document.querySelectorAll('.edit-only-field').forEach(el => el.style.display = 'block');
     
-    loadAvailableStocks(true);
-    
     modalTitle.textContent = 'Edit Order';
     orderIdInput.value = order.id;
     orderDateInput.value = order.order_date;
+    
+    // Wait for the modal datasets to load completely before setting edit values
+    await loadModalDatasets();
     
     // Select party and fill fields
     partyNameSelect.value = order.party_id;
@@ -1138,7 +1167,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.title = document.title.replace('Admin Panel', 'User Panel');
 
         // Hide unauthorized sidebar navigation options
-        const unauthorizedNavs = document.querySelectorAll('.sidebar-nav a[href="party.html"], .sidebar-nav a[href="stock.html"], .sidebar-nav a[href="user.html"]');
+        const unauthorizedNavs = document.querySelectorAll('.sidebar-nav a[href="party.html"], .sidebar-nav a[href="stock.html"], .sidebar-nav a[href="user.html"], .sidebar-nav a[href="transport.html"]');
         unauthorizedNavs.forEach(el => el.remove());
 
         // Hide '+ Add' party redirect button in the order modal
@@ -1147,10 +1176,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Load orders first to render the table instantly
-    loadOrders(currentPage, currentSearch, currentStatus).finally(() => {
-        // Load dropdown datasets in the background only AFTER the table renders
-        loadParties();
-        loadAvailableStocks();
-        loadTransports();
-    });
+    loadOrders(currentPage, currentSearch, currentStatus);
 });
