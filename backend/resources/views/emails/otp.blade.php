@@ -77,14 +77,14 @@
 </head>
 <body>
     <div class="container">
-        <div class="logo">demo</div>
+        <div class="logo">Demo</div>
         <h1>Welcome Back</h1>
         <p>You requested a secure verification code to access your account. Please use the following one-time password (OTP) to complete your sign-in process.</p>
         <div class="otp-box">{{ $otp }}</div>
         <p style="font-size: 14px; margin-bottom: 0;">This OTP code is valid for <strong>5 minutes</strong>. Do not share this code with anyone.</p>
-        <div class="warning">If you did not request this code, please ignore this email.</div>
+        
         <div class="footer">
-            &copy; {{ date('Y') }} demo. All rights reserved.
+            &copy; {{ date('Y') }} Demo. All rights reserved.
         </div>
     </div>
 </body>

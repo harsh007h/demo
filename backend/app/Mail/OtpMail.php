@@ -28,7 +28,7 @@ class OtpMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your demo Login OTP Code',
+            subject: 'Your Demo Login OTP Code',
         );
     }
 
