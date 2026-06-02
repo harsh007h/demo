@@ -145,6 +145,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function loadStats() {
+        const cacheKey = 'dashboard_stats_cache';
+        const cachedData = sessionStorage.getItem(cacheKey);
+
+        if (cachedData) {
+            try {
+                const data = JSON.parse(cachedData);
+                totalOrdersCount.textContent = data.total_orders !== undefined ? data.total_orders : 0;
+                pendingOrdersCount.textContent = data.pending_orders !== undefined ? data.pending_orders : 0;
+                const count = data.low_stock_count !== undefined ? data.low_stock_count : 0;
+                lowStockCountVal.textContent = count > 0 ? `${count} Items` : '0 Items';
+                lowStockCountVal.style.color = count > 0 ? 'var(--error-color)' : '#10b981';
+                totalPartiesCount.textContent = data.total_parties !== undefined ? data.total_parties : 0;
+                renderRecentOrders(data.recent_orders || []);
+                renderLowStockDetails(data.low_stock_items || []);
+            } catch (e) {
+                console.error('Failed to parse cached dashboard stats:', e);
+            }
+        }
+
         const headers = {
             'Authorization': `Bearer ${token}`,
             'Accept': 'application/json'
@@ -155,6 +174,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (res.ok) {
                 const data = await res.json();
                 
+                // Save to cache
+                sessionStorage.setItem(cacheKey, JSON.stringify(data));
+
                 // Populate Total & Pending Orders
                 totalOrdersCount.textContent = data.total_orders !== undefined ? data.total_orders : 0;
                 pendingOrdersCount.textContent = data.pending_orders !== undefined ? data.pending_orders : 0;
@@ -173,11 +195,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Render Low Stock Details
                 renderLowStockDetails(data.low_stock_items || []);
             } else {
-                setErrorStates();
+                if (!cachedData) {
+                    setErrorStates();
+                }
             }
         } catch (e) {
             console.error('Error fetching dashboard stats:', e);
-            setErrorStates();
+            if (!cachedData) {
+                setErrorStates();
+            }
         }
     }
 

@@ -86,6 +86,7 @@ function setLoading(btnElement, isLoading) {
 
 // Helper to clear parties cache
 function clearPartiesCache() {
+    sessionStorage.removeItem('dashboard_stats_cache');
     Object.keys(sessionStorage).forEach(key => {
         if (key.startsWith('parties_cache_')) {
             sessionStorage.removeItem(key);

@@ -101,9 +101,31 @@ async function checkStats() {
     }
 }
 
-// Fetch and Render Table
+// Helper to clear stocks cache
+function clearStocksCache() {
+    sessionStorage.removeItem('dashboard_stats_cache');
+    Object.keys(sessionStorage).forEach(key => {
+        if (key.startsWith('stocks_cache_')) {
+            sessionStorage.removeItem(key);
+        }
+    });
+}
+
+// Fetch and Render Table with Stale-While-Revalidate caching
 async function loadStocks(page = 1, search = '') {
-    try {
+    const cacheKey = `stocks_cache_p${page}_s${search}`;
+    const cachedData = sessionStorage.getItem(cacheKey);
+
+    if (cachedData) {
+        try {
+            const data = JSON.parse(cachedData);
+            stocks = data.data; // paginated items
+            renderTable(stocks);
+            renderPagination(data);
+        } catch (e) {
+            console.error('Failed to parse cached stocks:', e);
+        }
+    } else {
         setLoading(searchStockBtn, true);
         stockTableBody.innerHTML = `
             <tr>
@@ -112,7 +134,9 @@ async function loadStocks(page = 1, search = '') {
                     <div style="font-size: 14px; font-weight: 500;">Loading stocks...</div>
                 </td>
             </tr>`;
-        
+    }
+
+    try {
         let url = `${API_URL}/stocks?page=${page}`;
         if (search) {
             url += `&search=${encodeURIComponent(search)}`;
@@ -122,6 +146,10 @@ async function loadStocks(page = 1, search = '') {
         if (response.ok) {
             const data = await response.json();
             stocks = data.data; // paginated items
+            
+            // Save to cache for subsequent fast loads
+            sessionStorage.setItem(cacheKey, JSON.stringify(data));
+
             renderTable(stocks);
             renderPagination(data);
             await checkStats(); // Check stats dynamically on each load
@@ -133,7 +161,9 @@ async function loadStocks(page = 1, search = '') {
         }
     } catch (error) {
         console.error('Error fetching stocks:', error);
-        showToast('Network error while loading stocks', 'error');
+        if (!cachedData) {
+            showToast('Network error while loading stocks', 'error');
+        }
     } finally {
         setLoading(searchStockBtn, false);
     }
@@ -310,6 +340,7 @@ window.deleteStock = async (id) => {
                 headers
             });
             if (response.ok || response.status === 204) {
+                clearStocksCache();
                 showToast('Stock record deleted successfully!', 'success');
                 loadStocks(currentPage, currentSearch);
             } else {
@@ -357,6 +388,7 @@ stockForm.addEventListener('submit', async (e) => {
         }
 
         if (response.ok || response.status === 201) {
+            clearStocksCache();
             showToast(editId ? 'Stock updated successfully!' : 'Stock added successfully!', 'success');
             stockModal.classList.remove('show');
             loadStocks(currentPage, currentSearch);

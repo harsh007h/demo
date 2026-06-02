@@ -487,6 +487,7 @@ prevStepBtn.addEventListener('click', () => {
 
 // Helper to clear orders cache
 function clearOrdersCache() {
+    sessionStorage.removeItem('dashboard_stats_cache');
     Object.keys(sessionStorage).forEach(key => {
         if (key.startsWith('orders_cache_')) {
             sessionStorage.removeItem(key);
