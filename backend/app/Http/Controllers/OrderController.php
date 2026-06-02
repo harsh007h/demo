@@ -85,6 +85,18 @@ class OrderController extends Controller
 
                 // Decrement stock quantity
                 $stock = \App\Models\Stock::where('product_name', $product['serial_no'])->where('product_size', $product['size'])->first();
+                $availableStock = $stock ? $stock->quantity : 0;
+
+                if ($product['pieces'] > $availableStock) {
+                    $shortage = $product['pieces'] - $availableStock;
+                    \App\Models\Notification::create([
+                        'title' => 'Stock Shortage',
+                        'message' => "{$product['size']} Size stock shortage.\nNeed to produce {$shortage} more pieces.",
+                        'type' => 'stock_shortage',
+                        'is_read' => false,
+                    ]);
+                }
+
                 if ($stock) {
                     $stock->quantity = max(0, $stock->quantity - $product['pieces']);
                     $stock->save();
@@ -153,6 +165,18 @@ class OrderController extends Controller
 
                     // Deduct stock levels for updated order items
                     $stock = \App\Models\Stock::where('product_name', $product['serial_no'])->where('product_size', $product['size'])->first();
+                    $availableStock = $stock ? $stock->quantity : 0;
+
+                    if ($product['pieces'] > $availableStock) {
+                        $shortage = $product['pieces'] - $availableStock;
+                        \App\Models\Notification::create([
+                            'title' => 'Stock Shortage',
+                            'message' => "{$product['size']} Size stock shortage.\nNeed to produce {$shortage} more pieces.",
+                            'type' => 'stock_shortage',
+                            'is_read' => false,
+                        ]);
+                    }
+
                     if ($stock) {
                         $stock->quantity = max(0, $stock->quantity - $product['pieces']);
                         $stock->save();

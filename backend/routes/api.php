@@ -10,6 +10,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OtpController;
 use App\Http\Controllers\TransportController;
+use App\Http\Controllers\NotificationController;
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/send-otp', [OtpController::class, 'sendOtp']);
@@ -43,6 +44,11 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('/stocks/{stock}', [StockController::class, 'destroy']);
 
         Route::apiResource('users', UserController::class);
+
+        // Notifications API
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::post('/notifications/read/{id}', [NotificationController::class, 'markAsRead']);
+        Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
     });
 
     // Transports API

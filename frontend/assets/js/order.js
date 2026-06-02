@@ -997,6 +997,8 @@ function validateForm() {
         }
 
         // Validate stock quantity using the selected product name and selected size
+        // (Bypassed to allow orders to be saved successfully even with shortage, creating admin notifications)
+        /*
         const stockItem = availableStocks.find(s => 
             s.product_name && s.product_name.toUpperCase() === serialSelected.toUpperCase() &&
             s.product_size && s.product_size.toUpperCase() === sizeSelected.toUpperCase()
@@ -1006,6 +1008,7 @@ function validateForm() {
             showToast(`Error: Product "${serialSelected}" (Size: ${sizeSelected}) only has ${availableQty} pieces in stock, but you entered ${pieces}.`, 'error');
             valid = false;
         }
+        */
     });
 
     return valid;
