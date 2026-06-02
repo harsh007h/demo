@@ -8,6 +8,51 @@
   --text-primary: #f8fafc;
   --text-secondary: #cbd5e1;
   --error-color: #ef4444;
+  --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  --input-bg: rgba(0, 0, 0, 0.2);
+  --input-focus-bg: rgba(0, 0, 0, 0.4);
+  --table-border: rgba(255, 255, 255, 0.05);
+  --table-hover-bg: rgba(255, 255, 255, 0.05);
+  --modal-bg: rgba(30, 27, 75, 0.85);
+  --sidebar-active-bg: rgba(255, 255, 255, 0.1);
+}
+
+body.light-theme {
+  --bg-gradient-start: #f8fafc;
+  --bg-gradient-end: #e2e8f0;
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(99, 102, 241, 0.08);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --primary-color: #4f46e5;
+  --primary-hover: #3730a3;
+  --error-color: #dc2626;
+  --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --input-bg: rgba(255, 255, 255, 0.95);
+  --input-focus-bg: rgba(255, 255, 255, 1);
+  --table-border: rgba(0, 0, 0, 0.06);
+  --table-hover-bg: rgba(0, 0, 0, 0.02);
+  --modal-bg: rgba(255, 255, 255, 0.95);
+  --sidebar-active-bg: rgba(99, 102, 241, 0.08);
+}
+
+/* Global Transitions for smooth theme morphing */
+body, 
+.glass-card, 
+.sidebar, 
+.top-navbar, 
+input, 
+select, 
+textarea, 
+td, 
+th, 
+h2, 
+h3,
+h4,
+span,
+p,
+a {
+  transition: background 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 * {
@@ -69,7 +114,7 @@ body {
   padding: 40px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  box-shadow: var(--card-shadow);
   animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -86,7 +131,7 @@ h2 {
   font-size: 28px;
   font-weight: 700;
   margin-bottom: 8px;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 p.subtitle {
@@ -113,10 +158,10 @@ label {
 input, select, textarea {
   width: 100%;
   padding: 14px 16px;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--input-bg);
   border: 1px solid var(--glass-border);
   border-radius: 12px;
-  color: white;
+  color: var(--text-primary);
   font-size: 15px;
   transition: all 0.3s ease;
   outline: none;
@@ -124,7 +169,7 @@ input, select, textarea {
 
 input:focus, select:focus, textarea:focus {
   border-color: var(--primary-color);
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--input-focus-bg);
   box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
 }
 
@@ -134,13 +179,17 @@ input:focus + label, select:focus + label, textarea:focus + label {
 
 select option {
   background: var(--bg-gradient-end);
-  color: white;
+  color: var(--text-primary);
 }
 
 /* Make date picker icon white */
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
   cursor: pointer;
+}
+
+body.light-theme input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0) opacity(0.6);
 }
 
 /* Button Styles */
@@ -277,6 +326,8 @@ body.dashboard-page {
   border-bottom: none;
   height: 100%;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  animation: none;
 }
 
 .sidebar-nav {
@@ -295,8 +346,8 @@ body.dashboard-page {
 }
 
 .sidebar-nav a:hover, .sidebar-nav a.active {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: var(--sidebar-active-bg);
+  color: var(--text-primary);
 }
 
 .main-content {
@@ -425,7 +476,7 @@ body.dashboard-page {
 .dashboard-cards .card .value {
   font-size: 32px;
   font-weight: 700;
-  color: white;
+  color: var(--text-primary);
 }
 
 /* Table Styles */
@@ -447,12 +498,12 @@ body.dashboard-page {
 
 .custom-table td {
   padding: 16px 24px;
-  color: white;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--table-border);
 }
 
 .custom-table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--table-hover-bg);
 }
 
 .btn-icon {
@@ -1156,15 +1207,15 @@ body.dashboard-page {
 }
 
 .confirm-modal-card {
-  background: rgba(30, 27, 75, 0.85);
+  background: var(--modal-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-border);
   border-radius: 20px;
   padding: 30px;
   width: 90%;
   max-width: 400px;
-  box-shadow: 0 20px 40px 0 rgba(0, 0, 0, 0.4);
+  box-shadow: var(--card-shadow);
   transform: translateY(30px) scale(0.95);
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   text-align: center;
@@ -1199,13 +1250,13 @@ body.dashboard-page {
 .confirm-modal-title {
   font-size: 20px;
   font-weight: 700;
-  color: white;
+  color: var(--text-primary);
   margin-bottom: 12px;
 }
 
 .confirm-modal-message {
   font-size: 14px;
-  color: #cbd5e1;
+  color: var(--text-secondary);
   line-height: 1.5;
   margin-bottom: 24px;
 }
@@ -1316,12 +1367,12 @@ body.dashboard-page {
   margin-top: 12px;
   width: 340px;
   max-height: 480px;
-  background: rgba(15, 23, 42, 0.95);
+  background: var(--modal-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--card-shadow);
   display: flex;
   flex-direction: column;
   z-index: 1000;
@@ -1348,7 +1399,7 @@ body.dashboard-page {
 .dropdown-header h3 {
   font-size: 15px;
   font-weight: 600;
-  color: white;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -1414,7 +1465,7 @@ body.dashboard-page {
 .notification-title {
   font-weight: 600;
   font-size: 13px;
-  color: white;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1473,6 +1524,370 @@ body.dashboard-page {
   font-size: 13px;
 }
 
+/* Theme Toggle Button Styling */
+.theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-primary);
+  margin-right: 12px;
+  width: 40px;
+  height: 40px;
+}
 
+.theme-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(1.08) rotate(15deg);
+}
 
+.theme-toggle-btn:active {
+  transform: scale(0.95);
+}
 
+.theme-icon {
+  justify-content: center;
+  box-shadow: 0 0 0 2px #0f172a;
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 12px;
+  width: 340px;
+  max-height: 480px;
+  background: var(--modal-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.notification-dropdown.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.dropdown-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.mark-all-read-btn {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.mark-all-read-btn:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+.dropdown-body {
+  overflow-y: auto;
+  flex: 1;
+  max-height: 380px;
+}
+
+.notification-item {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.notification-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.notification-item.unread {
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.notification-item.unread::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  background: var(--primary-color);
+  border-radius: 50%;
+}
+
+.notification-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.notification-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notification-time {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.notification-message {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  white-space: pre-line;
+}
+
+.notification-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  justify-content: flex-end;
+}
+
+.btn-notif-action {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-notif-action:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.btn-notif-delete {
+  color: var(--error-color);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.btn-notif-delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.empty-notifications {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* Theme Toggle Button Styling */
+.theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-primary);
+  margin-right: 12px;
+  width: 40px;
+  height: 40px;
+}
+
+.theme-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(1.08) rotate(15deg);
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+.theme-icon {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.5s ease;
+}
+
+body.light-theme .theme-toggle-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .theme-toggle-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+body.light-theme .bg-shape {
+  opacity: 0.15;
+}
+
+/* Desktop Sidebar transitions and collapsed state */
+@media (min-width: 769px) {
+  .sidebar {
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, border-color 0.3s ease;
+    will-change: width, padding;
+  }
+
+  body.sidebar-collapsed .sidebar {
+    width: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    opacity: 0;
+    pointer-events: none;
+    border-right: none;
+  }
+}
+
+/* Menu Toggle Button (Visible everywhere) */
+.menu-toggle-btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-primary);
+  padding: 8px;
+  border-radius: 8px;
+  margin-right: 12px;
+  transition: all 0.2s ease;
+  width: 40px;
+  height: 40px;
+}
+
+.menu-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+body.light-theme .menu-toggle-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Responsive Mobile Sidebar & Overlay */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -290px; /* Offscreen hidden */
+    width: 280px;
+    height: 100vh;
+    z-index: 1050;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--modal-bg) !important;
+    border-right: 1px solid var(--glass-border);
+    border-radius: 0;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+  }
+
+  .sidebar.active {
+    left: 0; /* Slide in */
+  }
+
+  /* Reset desktop collapsed settings on mobile viewports */
+  body.sidebar-collapsed .sidebar {
+    width: 280px !important;
+    padding: 32px 24px !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .sidebar-close-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 24px;
+    right: 20px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 24px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+
+  .sidebar-close-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  body.light-theme .sidebar-close-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1040;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .sidebar-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  .dashboard-layout {
+    overflow-x: hidden;
+  }
+}
+
+/* Desktop Hiding of mobile close buttons and overlays */
+.sidebar-close-btn, .sidebar-overlay {
+  display: none !important;
+}

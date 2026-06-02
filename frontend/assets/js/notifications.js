@@ -1,3 +1,11 @@
+// Immediately check and apply theme before DOM is fully parsed to avoid flicker
+(function() {
+    const savedTheme = localStorage.getItem('dashboard_theme') || 'dark';
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+    }
+})();
+
 const NOTIF_API_URL = 'http://127.0.0.1:8000/api';
 const notifToken = localStorage.getItem('api_token');
 const notifUserRole = localStorage.getItem('user_role');
@@ -7,6 +15,122 @@ if (notifToken && notifUserRole === 'Admin') {
     document.addEventListener('DOMContentLoaded', () => {
         initializeNotificationSystem();
     });
+}
+
+// Theme toggle & Responsive Sidebar initialization (global, runs on all dashboard pages)
+document.addEventListener('DOMContentLoaded', () => {
+    initializeThemeSystem();
+    initializeResponsiveSidebar();
+});
+
+function initializeThemeSystem() {
+    const navbarUser = document.querySelector('.navbar-user');
+    if (!navbarUser) return;
+
+    // Create theme toggle button if it doesn't already exist
+    if (document.getElementById('themeToggleBtn')) return;
+
+    const themeBtn = document.createElement('button');
+    themeBtn.id = 'themeToggleBtn';
+    themeBtn.className = 'theme-toggle-btn';
+    themeBtn.title = 'Switch Theme';
+
+    const currentTheme = localStorage.getItem('dashboard_theme') || 'dark';
+    updateThemeButtonIcon(themeBtn, currentTheme);
+
+    // Insert right before user profile or notifications bell (prepend it in navbar-user)
+    navbarUser.insertBefore(themeBtn, navbarUser.firstChild);
+
+    themeBtn.addEventListener('click', () => {
+        const isLight = document.body.classList.toggle('light-theme');
+        const newTheme = isLight ? 'light' : 'dark';
+        localStorage.setItem('dashboard_theme', newTheme);
+        updateThemeButtonIcon(themeBtn, newTheme);
+        
+        // Toast feedback if toast container/function is present
+        if (typeof showToast === 'function') {
+            showToast(`Switched to ${newTheme} theme`, 'success');
+        }
+    });
+}
+
+function updateThemeButtonIcon(button, theme) {
+    if (theme === 'light') {
+        button.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-icon"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        `;
+    } else {
+        button.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-icon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        `;
+    }
+}
+
+function initializeResponsiveSidebar() {
+    const navbar = document.querySelector('.top-navbar');
+    if (!navbar || document.getElementById('menuToggleBtn')) return;
+
+    // Create hamburger button
+    const menuBtn = document.createElement('button');
+    menuBtn.id = 'menuToggleBtn';
+    menuBtn.className = 'menu-toggle-btn';
+    menuBtn.title = 'Toggle Sidebar';
+    menuBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    `;
+
+    // Prepend inside the top navbar (first element, aligns left)
+    navbar.insertBefore(menuBtn, navbar.firstChild);
+
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+        // Insert close button inside sidebar if it doesn't exist
+        if (!document.getElementById('sidebarCloseBtn')) {
+            const closeBtn = document.createElement('button');
+            closeBtn.id = 'sidebarCloseBtn';
+            closeBtn.className = 'sidebar-close-btn';
+            closeBtn.title = 'Close Menu';
+            closeBtn.innerHTML = `&times;`;
+            sidebar.appendChild(closeBtn);
+        }
+
+        // Create backdrop overlay
+        let overlay = document.getElementById('sidebarOverlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'sidebarOverlay';
+            overlay.className = 'sidebar-overlay';
+            document.body.appendChild(overlay);
+        }
+
+        const closeBtn = document.getElementById('sidebarCloseBtn');
+
+        // Toggle sidebar contextual active status
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (window.innerWidth <= 768) {
+                // Mobile: toggle drawer
+                sidebar.classList.add('active');
+                overlay.classList.add('active');
+            } else {
+                // Desktop: toggle body collapse class
+                document.body.classList.toggle('sidebar-collapsed');
+            }
+        });
+
+        const closeSidebar = () => {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        };
+
+        closeBtn.addEventListener('click', closeSidebar);
+        overlay.addEventListener('click', closeSidebar);
+        
+        // Close sidebar if clicking a link on mobile
+        sidebar.querySelectorAll('.sidebar-nav a').forEach(link => {
+            link.addEventListener('click', closeSidebar);
+        });
+    }
 }
 
 function initializeNotificationSystem() {
