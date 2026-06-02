@@ -106,7 +106,7 @@ function setLoading(btnElement, isLoading) {
 // Load Parties for Dropdown
 async function loadParties() {
     try {
-        const response = await fetch(`${API_URL}/parties?per_page=100`, { headers });
+        const response = await fetch(`${API_URL}/parties?per_page=1000000`, { headers });
         if (response.ok) {
             const data = await response.json();
             parties = data.data || data; // Handle paginated or flat data
@@ -136,7 +136,7 @@ async function loadParties() {
 // Load Transports for Dropdown
 async function loadTransports() {
     try {
-        const response = await fetch(`${API_URL}/transports?per_page=200`, { headers });
+        const response = await fetch(`${API_URL}/transports?per_page=1000000`, { headers });
         if (response.ok) {
             const data = await response.json();
             const transportList = data.data || data; // Handle paginated or flat data
@@ -337,7 +337,7 @@ function loadAvailableStocks(forceRefresh = false) {
     }
     stocksPromise = (async () => {
         try {
-            const response = await fetch(`${API_URL}/stocks?per_page=100`, { headers });
+            const response = await fetch(`${API_URL}/stocks?per_page=1000000`, { headers });
             if (response.ok) {
                 const data = await response.json();
                 availableStocks = data.data || [];
