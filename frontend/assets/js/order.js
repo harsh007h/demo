@@ -1134,6 +1134,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const sidebarHeader = document.querySelector('.sidebar-header h2');
         if (sidebarHeader) sidebarHeader.textContent = 'User Panel';
 
+        // Change tab title to User Panel
+        document.title = document.title.replace('Admin Panel', 'User Panel');
+
         // Hide unauthorized sidebar navigation options
         const unauthorizedNavs = document.querySelectorAll('.sidebar-nav a[href="party.html"], .sidebar-nav a[href="stock.html"], .sidebar-nav a[href="user.html"]');
         unauthorizedNavs.forEach(el => el.remove());

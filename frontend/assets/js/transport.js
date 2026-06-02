@@ -424,6 +424,13 @@ logoutBtn.addEventListener('click', async () => {
 // Hide User Management links if active user is Staff
 function configureSidebar() {
     if (userRole !== 'Admin') {
+        // Change sidebar header to User Panel
+        const sidebarHeader = document.querySelector('.sidebar-header h2');
+        if (sidebarHeader) sidebarHeader.textContent = 'User Panel';
+
+        // Change tab title to User Panel
+        document.title = document.title.replace('Admin Panel', 'User Panel');
+
         const userNavs = document.querySelectorAll('.sidebar-nav a[href="user.html"]');
         userNavs.forEach(nav => nav.remove());
     }
