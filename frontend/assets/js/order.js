@@ -750,7 +750,9 @@ window.openEditModal = async (id) => {
     addressInput.value = order.party ? order.party.address : '';
     
     transportNameInput.value = order.transport_name || '';
-    transportNumberInput.value = order.transport_number || '';
+    if (transportNumberInput) {
+        transportNumberInput.value = order.transport_number || '';
+    }
     paymentMethodSelect.value = order.payment_method;
     notesTextarea.value = order.notes || '';
     
@@ -1060,7 +1062,7 @@ orderForm.addEventListener('submit', async (e) => {
         party_id: partyNameSelect.value,
         products: products,
         transport_name: transportNameInput.value.trim(),
-        transport_number: transportNumberInput.value.trim(),
+        transport_number: transportNumberInput ? transportNumberInput.value.trim() : '',
         payment_method: paymentMethodSelect.value,
         status: editId ? (orders.find(o => o.id == editId)?.status || 'Pending') : 'Pending',
         notes: notesTextarea.value.trim()
@@ -1145,7 +1147,7 @@ printOrderBtn.addEventListener('click', () => {
         pincode: pincodeInput.value,
         address: addressInput.value,
         transport_name: transportNameInput.value,
-        transport_number: transportNumberInput.value,
+        transport_number: transportNumberInput ? transportNumberInput.value : '',
         payment_method: paymentMethodSelect.value,
         notes: notesTextarea.value,
         items: items
