@@ -703,9 +703,59 @@ window.printOrderDirect = (id) => {
     }, 150);
 };
 
+// Reusable Custom Confirm Modal
+function showConfirmModal({ title, message, confirmText = 'Yes, Delete', cancelText = 'Cancel' }) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-modal-overlay';
+        
+        overlay.innerHTML = `
+            <div class="confirm-modal-card">
+                <div class="confirm-modal-icon-container">
+                    <div class="confirm-modal-icon">🗑</div>
+                </div>
+                <h3 class="confirm-modal-title">${title}</h3>
+                <p class="confirm-modal-message">${message}</p>
+                <div class="confirm-modal-buttons">
+                    <button class="btn-confirm btn-confirm-cancel" id="confirmCancelBtn">${cancelText}</button>
+                    <button class="btn-confirm btn-confirm-action" id="confirmActionBtn">${confirmText}</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        setTimeout(() => {
+            overlay.classList.add('show');
+        }, 10);
+        
+        const cleanup = (result) => {
+            overlay.classList.remove('show');
+            setTimeout(() => {
+                overlay.remove();
+                resolve(result);
+            }, 300);
+        };
+        
+        overlay.querySelector('#confirmCancelBtn').addEventListener('click', () => cleanup(false));
+        overlay.querySelector('#confirmActionBtn').addEventListener('click', () => cleanup(true));
+        
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                cleanup(false);
+            }
+        });
+    });
+}
+
 // Delete Order
 window.deleteOrder = async (id) => {
-    if (confirm('Are you sure you want to delete this order?')) {
+    const confirmed = await showConfirmModal({
+        title: 'Delete Order',
+        message: 'Are you sure you want to delete this order? This action cannot be undone.'
+    });
+    
+    if (confirmed) {
         const delBtn = document.getElementById(`delBtn_${id}`);
         if (delBtn) delBtn.disabled = true;
 
@@ -729,6 +779,7 @@ window.deleteOrder = async (id) => {
         }
     }
 };
+
 
 // Form Validation
 function validateForm() {
