@@ -10,7 +10,7 @@
     }
 })();
 
-const NOTIF_API_URL = 'http://127.0.0.1:8000/api';
+const NOTIF_API_URL = window.location.origin + '/api';
 const notifToken = localStorage.getItem('api_token');
 const notifUserRole = localStorage.getItem('user_role');
 
@@ -291,7 +291,7 @@ function initializeNotificationSystem() {
         // Add View More link if there are more than 3 notifications
         if (data.length > 3) {
             const viewMoreEl = document.createElement('a');
-            viewMoreEl.href = 'http://127.0.0.1:5500/alerts.html';
+            viewMoreEl.href = 'alerts.html';
             viewMoreEl.className = 'dropdown-view-more';
             viewMoreEl.textContent = 'View More';
             listContainer.appendChild(viewMoreEl);

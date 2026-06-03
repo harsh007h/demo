@@ -1,4 +1,4 @@
-const API_URL = 'http://127.0.0.1:8000/api';
+const API_URL = window.location.origin + '/api';
 const token = localStorage.getItem('api_token');
 const userRole = localStorage.getItem('user_role');
 

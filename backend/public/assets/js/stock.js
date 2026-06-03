@@ -1,5 +1,5 @@
-const API_URL = 'http://127.0.0.1:8000/api';
-let parties = [];
+const API_URL = window.location.origin + '/api';
+let stocks = [];
 let currentPage = 1;
 let currentSearch = '';
 const token = localStorage.getItem('api_token');
@@ -12,7 +12,7 @@ if (!token) {
 
 // Redirect to dashboard if user is not Admin
 if (userRole !== 'Admin') {
-    alert('Access denied. Staff cannot access Party Management.');
+    alert('Access denied. Staff cannot access Stock Management.');
     window.location.href = 'dashboard.html';
 }
 
@@ -23,33 +23,33 @@ const headers = {
 };
 
 // DOM Elements
-const partyTableBody = document.getElementById('partyTableBody');
-const searchPartyInput = document.getElementById('searchPartyInput');
-const searchPartyBtn = document.getElementById('searchPartyBtn');
-const addPartyBtn = document.getElementById('addPartyBtn');
-const partyModal = document.getElementById('partyModal');
+const stockTableBody = document.getElementById('stockTableBody');
+const searchStockInput = document.getElementById('searchStockInput');
+const searchStockBtn = document.getElementById('searchStockBtn');
+const addStockBtn = document.getElementById('addStockBtn');
+const stockModal = document.getElementById('stockModal');
 const closeModal = document.getElementById('closeModal');
-const partyForm = document.getElementById('partyForm');
+const stockForm = document.getElementById('stockForm');
 const modalTitle = document.getElementById('modalTitle');
 const paginationContainer = document.getElementById('paginationContainer');
 const toastContainer = document.getElementById('toastContainer');
-const savePartyBtn = document.getElementById('savePartyBtn');
+const saveStockBtn = document.getElementById('saveStockBtn');
+const lowStockBanner = document.getElementById('lowStockBanner');
+const lowStockBannerText = document.getElementById('lowStockBannerText');
+const dismissBanner = document.getElementById('dismissBanner');
+const logoutBtn = document.getElementById('logoutBtn');
 
 // Form Fields
-const partyIdInput = document.getElementById('partyId');
-const partyNameInput = document.getElementById('partyName');
-const mobileInput = document.getElementById('mobile');
-const stateInput = document.getElementById('state');
-const cityInput = document.getElementById('city');
-const pincodeInput = document.getElementById('pincode');
-const addressInput = document.getElementById('address');
+const stockIdInput = document.getElementById('stockId');
+const productNameInput = document.getElementById('productName');
+const productSizeInput = document.getElementById('productSize');
+const quantityInput = document.getElementById('quantity');
 
 // Utility: Toast Notifications
 function showToast(message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     
-    // Icon based on type
     const icon = type === 'success' ? '✓' : '⚠';
     
     toast.innerHTML = `
@@ -59,12 +59,10 @@ function showToast(message, type = 'success') {
     
     toastContainer.appendChild(toast);
     
-    // Trigger animation
     setTimeout(() => {
         toast.classList.add('show');
     }, 10);
     
-    // Remove after 3 seconds
     setTimeout(() => {
         toast.classList.remove('show');
         setTimeout(() => {
@@ -75,6 +73,7 @@ function showToast(message, type = 'success') {
 
 // Utility: Button Loading State
 function setLoading(btnElement, isLoading) {
+    if (!btnElement) return;
     if (isLoading) {
         btnElement.classList.add('loading');
         btnElement.disabled = true;
@@ -84,44 +83,61 @@ function setLoading(btnElement, isLoading) {
     }
 }
 
-// Helper to clear parties cache
-function clearPartiesCache() {
+// Fetch and Check Stats for Low Stock Alerts
+async function checkStats() {
+    try {
+        const response = await fetch(`${API_URL}/stocks/stats`, { headers });
+        if (response.ok) {
+            const stats = await response.json();
+            if (stats.low_stock_count > 0) {
+                lowStockBannerText.textContent = `Warning: There are ${stats.low_stock_count} item(s) running low on stock (Quantity < 10)!`;
+                lowStockBanner.classList.add('show');
+            } else {
+                lowStockBanner.classList.remove('show');
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching stock stats:', error);
+    }
+}
+
+// Helper to clear stocks cache
+function clearStocksCache() {
     sessionStorage.removeItem('dashboard_stats_cache');
     Object.keys(sessionStorage).forEach(key => {
-        if (key.startsWith('parties_cache_')) {
+        if (key.startsWith('stocks_cache_')) {
             sessionStorage.removeItem(key);
         }
     });
 }
 
 // Fetch and Render Table with Stale-While-Revalidate caching
-async function loadParties(page = 1, search = '') {
-    const cacheKey = `parties_cache_p${page}_s${search}`;
+async function loadStocks(page = 1, search = '') {
+    const cacheKey = `stocks_cache_p${page}_s${search}`;
     const cachedData = sessionStorage.getItem(cacheKey);
-    
-    // 0ms instant render from cache if available
+
     if (cachedData) {
         try {
             const data = JSON.parse(cachedData);
-            parties = data.data; // paginated items
-            renderTable(parties);
+            stocks = data.data; // paginated items
+            renderTable(stocks);
             renderPagination(data);
         } catch (e) {
-            console.error('Failed to parse cached parties:', e);
+            console.error('Failed to parse cached stocks:', e);
         }
     } else {
-        setLoading(searchPartyBtn, true);
-        partyTableBody.innerHTML = `
+        setLoading(searchStockBtn, true);
+        stockTableBody.innerHTML = `
             <tr>
                 <td colspan="5" class="text-center" style="padding: 40px; color: var(--text-secondary);">
                     <div class="loader" style="display: block; margin: 0 auto 12px; border-top-color: var(--primary-color);"></div>
-                    <div style="font-size: 14px; font-weight: 500;">Loading parties...</div>
+                    <div style="font-size: 14px; font-weight: 500;">Loading stocks...</div>
                 </td>
             </tr>`;
     }
 
     try {
-        let url = `${API_URL}/parties?page=${page}`;
+        let url = `${API_URL}/stocks?page=${page}`;
         if (search) {
             url += `&search=${encodeURIComponent(search)}`;
         }
@@ -129,51 +145,60 @@ async function loadParties(page = 1, search = '') {
         const response = await fetch(url, { headers });
         if (response.ok) {
             const data = await response.json();
-            parties = data.data; // paginated items
+            stocks = data.data; // paginated items
             
             // Save to cache for subsequent fast loads
             sessionStorage.setItem(cacheKey, JSON.stringify(data));
-            
-            // Render fresh data in the background
-            renderTable(parties);
+
+            renderTable(stocks);
             renderPagination(data);
+            await checkStats(); // Check stats dynamically on each load
         } else if (response.status === 401) {
             localStorage.removeItem('api_token');
             window.location.href = 'login.html';
         } else {
-            showToast('Failed to load parties', 'error');
+            showToast('Failed to load stocks', 'error');
         }
     } catch (error) {
-        console.error('Error fetching parties:', error);
+        console.error('Error fetching stocks:', error);
         if (!cachedData) {
-            showToast('Network error while loading parties', 'error');
+            showToast('Network error while loading stocks', 'error');
         }
     } finally {
-        setLoading(searchPartyBtn, false);
+        setLoading(searchStockBtn, false);
     }
 }
 
 function renderTable(data) {
-    partyTableBody.innerHTML = '';
+    stockTableBody.innerHTML = '';
     
     if (data.length === 0) {
-        partyTableBody.innerHTML = `<tr><td colspan="5" class="text-center">No parties found</td></tr>`;
+        stockTableBody.innerHTML = `<tr><td colspan="5" class="text-center">No stock records found</td></tr>`;
         return;
     }
     
-    data.forEach(party => {
+    data.forEach(stock => {
         const tr = document.createElement('tr');
+        const isLow = stock.quantity < 10;
+        const statusBadge = isLow 
+            ? `<span class="status-badge status-low">Low Stock</span>`
+            : `<span class="status-badge status-ok">In Stock</span>`;
+            
         tr.innerHTML = `
-            <td>${party.name}</td>
-            <td>${party.mobile}</td>
-            <td>${party.city}</td>
-            <td>${party.state}</td>
+            <td><strong>${stock.product_name || '-'}</strong></td>
+            <td><strong>${stock.product_size}</strong></td>
             <td>
-                <button class="btn-icon edit-btn" onclick="openEditModal(${party.id})">Edit</button>
-                <button class="btn-icon delete-btn" id="delBtn_${party.id}" onclick="deleteParty(${party.id})">Delete</button>
+                <span style="font-size: 16px; font-weight: 600; color: ${isLow ? 'var(--error-color)' : '#ffffff'}">
+                    ${stock.quantity}
+                </span>
+            </td>
+            <td>${statusBadge}</td>
+            <td>
+                <button class="btn-icon edit-btn" onclick="openEditModal(${stock.id})">Edit</button>
+                <button class="btn-icon delete-btn" id="delBtn_${stock.id}" onclick="deleteStock(${stock.id})">Delete</button>
             </td>
         `;
-        partyTableBody.appendChild(tr);
+        stockTableBody.appendChild(tr);
     });
 }
 
@@ -189,18 +214,18 @@ function renderPagination(meta) {
     prevBtn.disabled = meta.current_page === 1;
     prevBtn.onclick = () => {
         currentPage = meta.current_page - 1;
-        loadParties(currentPage, currentSearch);
+        loadStocks(currentPage, currentSearch);
     };
     paginationContainer.appendChild(prevBtn);
 
-    // Page Numbers (simplified, showing all for now)
+    // Page Numbers
     for (let i = 1; i <= meta.last_page; i++) {
         const pageBtn = document.createElement('button');
         pageBtn.className = `page-btn ${meta.current_page === i ? 'active' : ''}`;
         pageBtn.textContent = i;
         pageBtn.onclick = () => {
             currentPage = i;
-            loadParties(currentPage, currentSearch);
+            loadStocks(currentPage, currentSearch);
         };
         paginationContainer.appendChild(pageBtn);
     }
@@ -212,39 +237,45 @@ function renderPagination(meta) {
     nextBtn.disabled = meta.current_page === meta.last_page;
     nextBtn.onclick = () => {
         currentPage = meta.current_page + 1;
-        loadParties(currentPage, currentSearch);
+        loadStocks(currentPage, currentSearch);
     };
     paginationContainer.appendChild(nextBtn);
 }
 
 // Open Modal for Add
-addPartyBtn.addEventListener('click', () => {
-    modalTitle.textContent = 'Add New Party';
-    partyForm.reset();
-    partyIdInput.value = '';
-    partyModal.classList.add('show');
+addStockBtn.addEventListener('click', () => {
+    modalTitle.textContent = 'Add New Stock';
+    stockForm.reset();
+    stockIdInput.value = '';
+    if (productNameInput) {
+        productNameInput.disabled = false;
+        productNameInput.value = '';
+    }
+    productSizeInput.disabled = false; // Allow size typing on creation
+    stockModal.classList.add('show');
 });
 
 // Close Modal
 closeModal.addEventListener('click', () => {
-    partyModal.classList.remove('show');
+    stockModal.classList.remove('show');
 });
 
 // Open Modal for Edit
 window.openEditModal = (id) => {
-    const party = parties.find(p => p.id === id);
-    if (!party) return;
+    const stock = stocks.find(s => s.id === id);
+    if (!stock) return;
     
-    modalTitle.textContent = 'Edit Party';
-    partyIdInput.value = party.id;
-    partyNameInput.value = party.name;
-    mobileInput.value = party.mobile;
-    stateInput.value = party.state;
-    cityInput.value = party.city;
-    pincodeInput.value = party.pincode;
-    addressInput.value = party.address;
+    modalTitle.textContent = 'Edit Stock';
+    stockIdInput.value = stock.id;
+    if (productNameInput) {
+        productNameInput.value = stock.product_name || '';
+        productNameInput.disabled = false;
+    }
+    productSizeInput.value = stock.product_size;
+    productSizeInput.disabled = false; // keep it enabled, or disabled if they shouldn't change sizes. Let's keep it editable.
+    quantityInput.value = stock.quantity;
     
-    partyModal.classList.add('show');
+    stockModal.classList.add('show');
 };
 
 // Reusable Custom Confirm Modal
@@ -292,121 +323,122 @@ function showConfirmModal({ title, message, confirmText = 'Yes, Delete', cancelT
     });
 }
 
-// Delete Party
-window.deleteParty = async (id) => {
+// Delete Stock
+window.deleteStock = async (id) => {
     const confirmed = await showConfirmModal({
-        title: 'Delete Party',
-        message: 'Are you sure you want to delete this party? This action cannot be undone.'
+        title: 'Delete Stock Record',
+        message: 'Are you sure you want to delete this stock record? This action cannot be undone.'
     });
     
     if (confirmed) {
         const delBtn = document.getElementById(`delBtn_${id}`);
-        if(delBtn) delBtn.disabled = true; // basic loading state for delete
+        if (delBtn) delBtn.disabled = true;
 
         try {
-            const response = await fetch(`${API_URL}/parties/${id}`, {
+            const response = await fetch(`${API_URL}/stocks/${id}`, {
                 method: 'DELETE',
                 headers
             });
             if (response.ok || response.status === 204) {
-                clearPartiesCache(); // Invalidate cache
-                showToast('Party deleted successfully!', 'success');
-                loadParties(currentPage, currentSearch);
+                clearStocksCache();
+                showToast('Stock record deleted successfully!', 'success');
+                loadStocks(currentPage, currentSearch);
             } else {
-                showToast('Failed to delete party.', 'error');
-                if(delBtn) delBtn.disabled = false;
+                showToast('Failed to delete stock record.', 'error');
+                if (delBtn) delBtn.disabled = false;
             }
         } catch (error) {
-            console.error('Error deleting party:', error);
+            console.error('Error deleting stock:', error);
             showToast('Network error while deleting.', 'error');
-            if(delBtn) delBtn.disabled = false;
+            if (delBtn) delBtn.disabled = false;
         }
     }
 };
 
 
-// Form Validation
-function validateForm() {
-    const mobileRegex = /^[0-9]{10}$/;
-    if (!mobileRegex.test(mobileInput.value.trim())) {
-        showToast('Mobile number must be exactly 10 digits.', 'error');
-        return false;
-    }
-
-    const pincodeRegex = /^[0-9]{6}$/;
-    if (!pincodeRegex.test(pincodeInput.value.trim())) {
-        showToast('Pincode must be exactly 6 digits.', 'error');
-        return false;
-    }
-
-    return true;
-}
-
 // Handle Form Submit (Add/Edit)
-partyForm.addEventListener('submit', async (e) => {
+stockForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
-
-    const partyData = {
-        name: partyNameInput.value.trim(),
-        mobile: mobileInput.value.trim(),
-        state: stateInput.value.trim(),
-        city: cityInput.value.trim(),
-        pincode: pincodeInput.value.trim(),
-        address: addressInput.value.trim()
+    const stockData = {
+        product_name: productNameInput.value.trim(),
+        product_size: productSizeInput.value.trim(),
+        quantity: parseInt(quantityInput.value)
     };
     
-    const editId = partyIdInput.value;
-    setLoading(savePartyBtn, true);
+    const editId = stockIdInput.value;
+    setLoading(saveStockBtn, true);
     
     try {
         let response;
         if (editId) {
             // Update existing
-            response = await fetch(`${API_URL}/parties/${editId}`, {
+            response = await fetch(`${API_URL}/stocks/${editId}`, {
                 method: 'PUT',
                 headers,
-                body: JSON.stringify(partyData)
+                body: JSON.stringify(stockData)
             });
         } else {
             // Add new
-            response = await fetch(`${API_URL}/parties`, {
+            response = await fetch(`${API_URL}/stocks`, {
                 method: 'POST',
                 headers,
-                body: JSON.stringify(partyData)
+                body: JSON.stringify(stockData)
             });
         }
 
         if (response.ok || response.status === 201) {
-            clearPartiesCache(); // Invalidate cache
-            showToast(editId ? 'Party updated successfully!' : 'Party added successfully!', 'success');
-            partyModal.classList.remove('show');
-            loadParties(currentPage, currentSearch); // reload current page
+            clearStocksCache();
+            showToast(editId ? 'Stock updated successfully!' : 'Stock added successfully!', 'success');
+            stockModal.classList.remove('show');
+            loadStocks(currentPage, currentSearch);
         } else {
             const errorData = await response.json();
             console.error('Validation Error:', errorData);
-            showToast(errorData.message || 'Failed to save party.', 'error');
+            showToast(errorData.message || 'Failed to save stock.', 'error');
         }
     } catch (error) {
-        console.error('Error saving party:', error);
+        console.error('Error saving stock:', error);
         showToast('Network error while saving.', 'error');
     } finally {
-        setLoading(savePartyBtn, false);
+        setLoading(saveStockBtn, false);
     }
 });
 
 // Search functionality
 function handleSearch() {
-    currentSearch = searchPartyInput.value.trim();
-    currentPage = 1; // reset to first page on new search
-    loadParties(currentPage, currentSearch);
+    currentSearch = searchStockInput.value.trim();
+    currentPage = 1;
+    loadStocks(currentPage, currentSearch);
 }
 
-searchPartyBtn.addEventListener('click', handleSearch);
-searchPartyInput.addEventListener('keyup', (e) => {
+searchStockBtn.addEventListener('click', handleSearch);
+searchStockInput.addEventListener('keyup', (e) => {
     if (e.key === 'Enter') {
         handleSearch();
+    }
+});
+
+// Dismiss Low Stock Banner
+dismissBanner.addEventListener('click', () => {
+    lowStockBanner.classList.remove('show');
+});
+
+// Handle Logout
+logoutBtn.addEventListener('click', async () => {
+    try {
+        await fetch(`${API_URL}/logout`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
+        });
+    } catch (error) {
+        console.error('Error logging out:', error);
+    } finally {
+        localStorage.removeItem('api_token');
+        window.location.href = 'login.html';
     }
 });
 
@@ -418,5 +450,5 @@ document.addEventListener('DOMContentLoaded', () => {
         const userNav = document.querySelectorAll('.sidebar-nav a[href="user.html"]');
         userNav.forEach(el => el.remove());
     }
-    loadParties(currentPage, currentSearch);
+    loadStocks(currentPage, currentSearch);
 });
