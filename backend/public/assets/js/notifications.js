@@ -291,7 +291,7 @@ function initializeNotificationSystem() {
         // Add View More link if there are more than 3 notifications
         if (data.length > 3) {
             const viewMoreEl = document.createElement('a');
-            viewMoreEl.href = 'alerts.html';
+            viewMoreEl.href = 'alerts';
             viewMoreEl.className = 'dropdown-view-more';
             viewMoreEl.textContent = 'View More';
             listContainer.appendChild(viewMoreEl);
@@ -380,3 +380,4 @@ function initializeNotificationSystem() {
     // Poll for notifications every 30 seconds
     setInterval(loadNotifications, 30000);
 }
+

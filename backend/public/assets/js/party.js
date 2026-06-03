@@ -7,13 +7,13 @@ const userRole = localStorage.getItem('user_role');
 
 // Redirect to login if no token
 if (!token) {
-    window.location.href = 'login.html';
+    window.location.href = 'login';
 }
 
 // Redirect to dashboard if user is not Admin
 if (userRole !== 'Admin') {
     alert('Access denied. Staff cannot access Party Management.');
-    window.location.href = 'dashboard.html';
+    window.location.href = 'dashboard';
 }
 
 const headers = {
@@ -139,7 +139,7 @@ async function loadParties(page = 1, search = '') {
             renderPagination(data);
         } else if (response.status === 401) {
             localStorage.removeItem('api_token');
-            window.location.href = 'login.html';
+            window.location.href = 'login';
         } else {
             showToast('Failed to load parties', 'error');
         }
@@ -415,8 +415,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hide User Management for Staff
     const userRole = localStorage.getItem('user_role');
     if (userRole !== 'Admin') {
-        const userNav = document.querySelectorAll('.sidebar-nav a[href="user.html"]');
+        const userNav = document.querySelectorAll('.sidebar-nav a[href="user"]');
         userNav.forEach(el => el.remove());
     }
     loadParties(currentPage, currentSearch);
 });
+

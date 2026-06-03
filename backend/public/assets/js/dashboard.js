@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // If no token, redirect to login
     if (!token) {
-        window.location.href = 'login.html';
+        window.location.href = 'login';
         return;
     }
 
@@ -20,14 +20,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.title = document.title.replace('Admin Panel', 'User Panel');
 
         // Hide unauthorized sidebar navigation options
-        const unauthorizedNavs = document.querySelectorAll('.sidebar-nav a[href="party.html"], .sidebar-nav a[href="stock.html"], .sidebar-nav a[href="user.html"], .sidebar-nav a[href="transport.html"], .sidebar-nav a[href="alerts.html"]');
+        const unauthorizedNavs = document.querySelectorAll('.sidebar-nav a[href="party"], .sidebar-nav a[href="stock"], .sidebar-nav a[href="user"], .sidebar-nav a[href="transport"], .sidebar-nav a[href="alerts"]');
         unauthorizedNavs.forEach(el => el.remove());
 
         // Hide unauthorized dashboard cards (Stock Alert and Total Parties)
-        const stockAlertCard = document.querySelector('.dashboard-cards a[href="stock.html"]');
+        const stockAlertCard = document.querySelector('.dashboard-cards a[href="stock"]');
         if (stockAlertCard) stockAlertCard.style.display = 'none';
 
-        const totalPartiesCard = document.querySelector('.dashboard-cards a[href="party.html"]');
+        const totalPartiesCard = document.querySelector('.dashboard-cards a[href="party"]');
         if (totalPartiesCard) totalPartiesCard.style.display = 'none';
 
         // Hide Low Stock Details card
@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         lowStockItems.forEach(item => {
             const div = document.createElement('a');
-            div.href = 'stock.html';
+            div.href = 'stock';
             div.className = 'low-stock-item';
             div.innerHTML = `
                 <span class="size-label">${item.product_name || 'Product'} (${item.product_size})</span>
@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         console.error('Error logging out:', error);
                     } finally {
                         localStorage.removeItem('api_token');
-                        window.location.href = 'login.html';
+                        window.location.href = 'login';
                     }
                 });
             }
@@ -323,7 +323,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Token invalid or expired
             console.warn('Session expired or invalid token');
             localStorage.removeItem('api_token');
-            window.location.href = 'login.html';
+            window.location.href = 'login';
         }
     } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -345,7 +345,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         } finally {
             // Always clear token and redirect, even if API call fails
             localStorage.removeItem('api_token');
-            window.location.href = 'login.html';
+            window.location.href = 'login';
         }
     });
 });
+

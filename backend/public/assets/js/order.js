@@ -3,7 +3,7 @@ const token = localStorage.getItem('api_token');
 
 // Redirect to login if no token
 if (!token) {
-    window.location.href = 'login.html';
+    window.location.href = 'login';
 }
 
 const headers = {
@@ -125,7 +125,7 @@ async function loadParties() {
             renderCustomPartyDropdown(parties);
         } else if (response.status === 401) {
             localStorage.removeItem('api_token');
-            window.location.href = 'login.html';
+            window.location.href = 'login';
         }
     } catch (error) {
         console.error('Error fetching parties:', error);
@@ -325,7 +325,7 @@ function clearPartyFields() {
 // Redirect to add party page in a new tab
 if (addPartyRedirectBtn) {
     addPartyRedirectBtn.addEventListener('click', () => {
-        window.open('party.html', '_blank');
+        window.open('party', '_blank');
     });
 }
 
@@ -543,7 +543,7 @@ async function loadOrders(page = 1, search = '', status = '') {
             renderPagination(data);
         } else if (response.status === 401) {
             localStorage.removeItem('api_token');
-            window.location.href = 'login.html';
+            window.location.href = 'login';
         } else {
             showToast('Failed to load orders', 'error');
         }
@@ -1195,7 +1195,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.title = document.title.replace('Admin Panel', 'User Panel');
 
         // Hide unauthorized sidebar navigation options
-        const unauthorizedNavs = document.querySelectorAll('.sidebar-nav a[href="party.html"], .sidebar-nav a[href="stock.html"], .sidebar-nav a[href="user.html"], .sidebar-nav a[href="transport.html"], .sidebar-nav a[href="alerts.html"]');
+        const unauthorizedNavs = document.querySelectorAll('.sidebar-nav a[href="party"], .sidebar-nav a[href="stock"], .sidebar-nav a[href="user"], .sidebar-nav a[href="transport"], .sidebar-nav a[href="alerts"]');
         unauthorizedNavs.forEach(el => el.remove());
 
         // Hide '+ Add' party redirect button in the order modal
@@ -1206,3 +1206,4 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load orders first to render the table instantly
     loadOrders(currentPage, currentSearch, currentStatus);
 });
+

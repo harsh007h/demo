@@ -4,13 +4,13 @@ const userRole = localStorage.getItem('user_role');
 
 // Redirect if not logged in
 if (!token) {
-    window.location.href = 'login.html';
+    window.location.href = 'login';
 }
 
 // Redirect to dashboard if user is not Admin
 if (userRole !== 'Admin') {
     alert('Access denied. Staff cannot access Alerts.');
-    window.location.href = 'dashboard.html';
+    window.location.href = 'dashboard';
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (sidebarAlertLink) {
         sidebarAlertLink.addEventListener('click', (e) => {
             // Keep page transition but allow local hash override if clicked on same page
-            if (window.location.pathname.endsWith('alerts.html')) {
+            if (window.location.pathname.endsWith('alerts')) {
                 e.preventDefault();
                 setSection('Alert Name');
             }
@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 console.error('Error logging out:', error);
             } finally {
                 localStorage.removeItem('api_token');
-                window.location.href = 'login.html';
+                window.location.href = 'login';
             }
         });
     }
@@ -376,7 +376,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         } else {
             localStorage.removeItem('api_token');
-            window.location.href = 'login.html';
+            window.location.href = 'login';
         }
     } catch (e) {
         console.error('Error connecting to user profile:', e);
@@ -403,7 +403,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error('Error logging out:', error);
         } finally {
             localStorage.removeItem('api_token');
-            window.location.href = 'login.html';
+            window.location.href = 'login';
         }
     });
 });
+

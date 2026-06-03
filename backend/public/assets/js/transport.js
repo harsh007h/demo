@@ -7,12 +7,12 @@ const userRole = localStorage.getItem('user_role');
 
 // Page authorization check
 if (!token) {
-    window.location.href = 'login.html';
+    window.location.href = 'login';
 }
 
 if (userRole !== 'Admin') {
     alert('Access denied. Staff cannot access Transport Management.');
-    window.location.href = 'dashboard.html';
+    window.location.href = 'dashboard';
 }
 
 const headers = {
@@ -122,7 +122,7 @@ async function loadTransports(page = 1, search = '') {
             localStorage.removeItem('api_token');
             localStorage.removeItem('user_role');
             localStorage.removeItem('user_name');
-            window.location.href = 'login.html';
+            window.location.href = 'login';
         } else {
             showToast('Failed to load transports', 'error');
         }
@@ -429,7 +429,7 @@ logoutBtn.addEventListener('click', async () => {
         localStorage.removeItem('api_token');
         localStorage.removeItem('user_role');
         localStorage.removeItem('user_name');
-        window.location.href = 'login.html';
+        window.location.href = 'login';
     }
 });
 
@@ -443,7 +443,7 @@ function configureSidebar() {
         // Change tab title to User Panel
         document.title = document.title.replace('Admin Panel', 'User Panel');
 
-        const userNavs = document.querySelectorAll('.sidebar-nav a[href="user.html"]');
+        const userNavs = document.querySelectorAll('.sidebar-nav a[href="user"]');
         userNavs.forEach(nav => nav.remove());
     }
 }
@@ -454,3 +454,4 @@ document.addEventListener('DOMContentLoaded', () => {
     configureAccessUI();
     loadTransports(currentPage, currentSearch);
 });
+

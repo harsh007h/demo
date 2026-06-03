@@ -7,12 +7,12 @@ const userRole = localStorage.getItem('user_role');
 
 // Page authorization check
 if (!token) {
-    window.location.href = 'login.html';
+    window.location.href = 'login';
 }
 
 if (userRole !== 'Admin') {
     alert('Access denied. Staff cannot access User Management.');
-    window.location.href = 'dashboard.html';
+    window.location.href = 'dashboard';
 }
 
 const headers = {
@@ -114,11 +114,11 @@ async function loadUsers(page = 1, search = '') {
             localStorage.removeItem('api_token');
             localStorage.removeItem('user_role');
             localStorage.removeItem('user_name');
-            window.location.href = 'login.html';
+            window.location.href = 'login';
         } else if (response.status === 403) {
             showToast('Access Denied: You do not have permissions to manage users.', 'error');
             setTimeout(() => {
-                window.location.href = 'dashboard.html';
+                window.location.href = 'dashboard';
             }, 1500);
         } else {
             showToast('Failed to load users', 'error');
@@ -431,14 +431,14 @@ logoutBtn.addEventListener('click', async () => {
         localStorage.removeItem('api_token');
         localStorage.removeItem('user_role');
         localStorage.removeItem('user_name');
-        window.location.href = 'login.html';
+        window.location.href = 'login';
     }
 });
 
 // Hide User Management links if active user is Staff (additional safeguard)
 function configureSidebar() {
     if (userRole !== 'Admin') {
-        const userNavs = document.querySelectorAll('.sidebar-nav a[href="user.html"]');
+        const userNavs = document.querySelectorAll('.sidebar-nav a[href="user"]');
         userNavs.forEach(nav => nav.remove());
     }
 }
@@ -448,3 +448,4 @@ document.addEventListener('DOMContentLoaded', () => {
     configureSidebar();
     loadUsers(currentPage, currentSearch);
 });
+
