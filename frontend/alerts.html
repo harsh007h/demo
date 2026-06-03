@@ -4,16 +4,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Party Management - Admin Panel</title>
+    <title>Alerts Center - Admin Panel</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./assets/css/style.css">
+    <style>
+        .main-content {
+            overflow-y: hidden;
+        }
+
+        .notifications-feed-container {
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .notification-feed-card {
+            padding: 12px 16px;
+        }
+
+        .notification-feed-title {
+            margin: 0 0 4px 0;
+        }
+
+        .pagination-container {
+            margin-top: 12px;
+            padding: 12px 24px;
+        }
+    </style>
 </head>
 
 <body class="dashboard-page">
     <div class="bg-shape shape1"></div>
     <div class="bg-shape shape2" style="background: #10b981;"></div>
 
-    <div class="dashboard-layout">
+    <div class="dashboard-layout" id="dashboardContent" style="display: none;">
         <!-- Sidebar -->
         <aside class="sidebar glass-card">
             <div class="sidebar-header">
@@ -29,7 +52,7 @@
                     </svg>
                     <span class="sidebar-label">Dashboard</span>
                 </a>
-                <a href="party.html" class="active" data-tooltip="Parties">
+                <a href="party.html" data-tooltip="Parties">
                     <svg class="sidebar-link-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
@@ -82,7 +105,7 @@
                     </svg>
                     <span class="sidebar-label">Transports</span>
                 </a>
-                <a href="alerts.html" id="sidebarAlertNameLink" data-tooltip="Alert">
+                <a href="alerts.html" class="active" id="sidebarAlertNameLink" data-tooltip="Alert">
                     <svg class="sidebar-link-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round">
@@ -110,94 +133,95 @@
         <main class="main-content">
             <!-- Top Navbar -->
             <header class="top-navbar glass-card">
-                <div class="navbar-title" style="font-size: 18px; font-weight: 600;">Party Management</div>
+                <div class="navbar-title" id="alertsTitle" style="font-size: 18px; font-weight: 600;">Alerts Center
+                </div>
                 <div class="navbar-user">
-                    <button class="btn" id="addPartyBtn" style="width: auto; margin-top: 0; padding: 10px 20px;">
-                        <span class="btn-text">+ Add Party</span>
-                    </button>
+                    <div class="user-info-mini">
+                        <div style="display: flex; flex-direction: column; text-align: right;">
+                            <span id="userName" style="font-weight: 500;">Loading...</span>
+                            <span id="userEmail" style="font-size: 11px; color: var(--text-secondary);"></span>
+                        </div>
+                        <div class="profile-avatar-mini" id="avatarInitial"></div>
+                    </div>
                 </div>
             </header>
 
-            <!-- Search and Filter -->
-            <div class="glass-card"
-                style="max-width: none; padding: 20px; display: flex; gap: 16px; margin-bottom: 24px;">
-                <input type="text" id="searchPartyInput" placeholder="Search Party by Name or Mobile..."
-                    style="flex: 1;">
-                <button class="btn" id="searchPartyBtn" style="width: auto; margin-top: 0; padding: 0 24px;">
-                    <span class="btn-text">Search</span>
-                    <span class="loader"></span>
-                </button>
-            </div>
+            <!-- Screen Reader Live Announcer -->
+            <div id="liveAnnouncer" class="sr-only" aria-live="polite"></div>
 
-            <!-- Table -->
-            <div class="glass-card table-container" style="max-width: none; overflow-x: auto; padding: 0;">
-                <table class="custom-table">
-                    <thead>
-                        <tr>
-                            <th>Party Name</th>
-                            <th>Mobile</th>
-                            <th>City</th>
-                            <th>State</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="partyTableBody">
-                        <!-- Data populated by JS -->
-                    </tbody>
-                </table>
-                <div id="paginationContainer" class="pagination-container">
-                    <!-- Pagination populated by JS -->
+            <!-- Dashboard Grid for Notifications -->
+            <div class="glass-card" style="max-width: none; padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 id="feedHeaderTitle"
+                        style="margin: 0; font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary);">
+                        All Notifications</h3>
                 </div>
+
+                <div id="notificationsFeed" class="notifications-feed-container" role="feed" aria-busy="false"
+                    aria-label="Notification Feed">
+                    <div style="text-align: center; padding: 24px; color: var(--text-secondary);">Loading
+                        notifications...</div>
+                </div>
+
+                <div id="paginationContainer" class="pagination-container"></div>
             </div>
         </main>
     </div>
 
-    <!-- Modal for Add/Edit -->
-    <div id="partyModal" class="modal-overlay">
-        <div class="glass-card modal-content" style="max-width: 500px; width: 100%; margin: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                <h3 id="modalTitle" style="color: white; font-size: 20px;">Add New Party</h3>
-                <button id="closeModal"
-                    style="background: none; border: none; color: white; font-size: 24px; cursor: pointer;">&times;</button>
+    <!-- Modal for View Profile -->
+    <div id="profileModal" class="modal-overlay">
+        <div class="glass-card modal-content" style="max-width: 450px; width: 100%; margin: 20px; padding: 30px;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 16px;">
+                <h3 style="color: white; font-size: 20px; font-weight: 600;">My Profile</h3>
+                <button id="closeProfileModal"
+                    style="background: none; border: none; color: white; font-size: 28px; cursor: pointer; line-height: 1;">&times;</button>
             </div>
 
-            <form id="partyForm">
-                <input type="hidden" id="partyId">
-                <div class="form-group">
-                    <label>Party Name</label>
-                    <input type="text" id="partyName" required placeholder="Enter party name">
-                </div>
-                <div class="form-group">
-                    <label>Mobile</label>
-                    <input type="text" id="mobile" required placeholder="Enter mobile number">
-                </div>
+            <div class="profile-avatar" id="profileModalAvatar"
+                style="width: 90px; height: 90px; font-size: 36px; margin: 0 auto 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: linear-gradient(135deg, var(--primary-color), #ec4899); color: white; font-weight: 700;">
+                U</div>
 
+            <div class="user-info"
+                style="margin: 0 0 24px 0; background: rgba(0, 0, 0, 0.2); padding: 20px; border-radius: 16px; border: 1px solid var(--glass-border);">
+                <div style="margin-bottom: 16px;">
+                    <div class="label"
+                        style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary);">Full Name
+                    </div>
+                    <div class="value" id="profileModalName"
+                        style="font-size: 16px; font-weight: 500; margin-top: 4px; color: white;">...</div>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <div class="label"
+                        style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary);">Email Address
+                    </div>
+                    <div class="value" id="profileModalEmail"
+                        style="font-size: 16px; font-weight: 500; margin-top: 4px; color: white;">...</div>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <div class="label"
+                        style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary);">Mobile Number
+                    </div>
+                    <div class="value" id="profileModalMobile"
+                        style="font-size: 16px; font-weight: 500; margin-top: 4px; color: white;">...</div>
+                </div>
                 <div style="display: flex; gap: 16px;">
-                    <div class="form-group" style="flex: 1;">
-                        <label>State</label>
-                        <input type="text" id="state" required placeholder="State">
+                    <div style="flex: 1;">
+                        <div class="label"
+                            style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary);">Role</div>
+                        <div class="value" id="profileModalRole" style="margin-top: 6px;">...</div>
                     </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label>City</label>
-                        <input type="text" id="city" required placeholder="City">
+                    <div style="flex: 1;">
+                        <div class="label"
+                            style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary);">Status
+                        </div>
+                        <div class="value" id="profileModalStatus" style="margin-top: 6px;">...</div>
                     </div>
                 </div>
+            </div>
 
-                <div class="form-group">
-                    <label>Pincode</label>
-                    <input type="text" id="pincode" required placeholder="Pincode">
-                </div>
-
-                <div class="form-group">
-                    <label>Address</label>
-                    <input type="text" id="address" required placeholder="Full address">
-                </div>
-
-                <button type="submit" class="btn" id="savePartyBtn">
-                    <span class="btn-text">Save Party</span>
-                    <span class="loader"></span>
-                </button>
-            </form>
+            <button class="btn btn-logout" id="profileModalLogoutBtn" style="margin-top: 10px; width: 100%;">Log
+                Out</button>
         </div>
     </div>
 
@@ -205,7 +229,7 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <script src="./assets/js/notifications.js"></script>
-    <script src="./assets/js/party.js"></script>
+    <script src="./assets/js/alerts.js"></script>
 </body>
 
 </html>

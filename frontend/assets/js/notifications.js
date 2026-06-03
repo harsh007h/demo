@@ -1,8 +1,12 @@
-// Immediately check and apply theme before DOM is fully parsed to avoid flicker
+// Immediately check and apply theme and sidebar state before DOM is fully parsed to avoid flicker
 (function() {
     const savedTheme = localStorage.getItem('dashboard_theme') || 'dark';
     if (savedTheme === 'light') {
         document.body.classList.add('light-theme');
+    }
+    const sidebarCollapsed = localStorage.getItem('sidebar_collapsed') === 'true';
+    if (sidebarCollapsed && window.innerWidth > 768) {
+        document.body.classList.add('sidebar-collapsed');
     }
 })();
 
@@ -113,8 +117,21 @@ function initializeResponsiveSidebar() {
                 sidebar.classList.add('active');
                 overlay.classList.add('active');
             } else {
-                // Desktop: toggle body collapse class
-                document.body.classList.toggle('sidebar-collapsed');
+                // Desktop: toggle body collapse class and save state
+                const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+                localStorage.setItem('sidebar_collapsed', isCollapsed ? 'true' : 'false');
+            }
+        });
+
+        // Maintain sidebar collapse status on window resize
+        window.addEventListener('resize', () => {
+            if (window.innerWidth <= 768) {
+                document.body.classList.remove('sidebar-collapsed');
+            } else {
+                const sidebarCollapsed = localStorage.getItem('sidebar_collapsed') === 'true';
+                if (sidebarCollapsed) {
+                    document.body.classList.add('sidebar-collapsed');
+                }
             }
         });
 
@@ -239,7 +256,10 @@ function initializeNotificationSystem() {
             return;
         }
 
-        data.forEach(item => {
+        // Limit dropdown to 3 notifications
+        const itemsToShow = data.slice(0, 3);
+
+        itemsToShow.forEach(item => {
             const itemElement = document.createElement('div');
             itemElement.className = `notification-item ${item.is_read ? 'read' : 'unread'}`;
             
@@ -267,6 +287,15 @@ function initializeNotificationSystem() {
             `;
             listContainer.appendChild(itemElement);
         });
+
+        // Add View More link if there are more than 3 notifications
+        if (data.length > 3) {
+            const viewMoreEl = document.createElement('a');
+            viewMoreEl.href = 'http://127.0.0.1:5500/alerts.html';
+            viewMoreEl.className = 'dropdown-view-more';
+            viewMoreEl.textContent = 'View More';
+            listContainer.appendChild(viewMoreEl);
+        }
 
         // Add action button listeners
         listContainer.querySelectorAll('.btn-notif-read').forEach(btn => {

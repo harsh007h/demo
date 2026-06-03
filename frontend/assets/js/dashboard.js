@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.title = document.title.replace('Admin Panel', 'User Panel');
 
         // Hide unauthorized sidebar navigation options
-        const unauthorizedNavs = document.querySelectorAll('.sidebar-nav a[href="party.html"], .sidebar-nav a[href="stock.html"], .sidebar-nav a[href="user.html"], .sidebar-nav a[href="transport.html"]');
+        const unauthorizedNavs = document.querySelectorAll('.sidebar-nav a[href="party.html"], .sidebar-nav a[href="stock.html"], .sidebar-nav a[href="user.html"], .sidebar-nav a[href="transport.html"], .sidebar-nav a[href="alerts.html"]');
         unauthorizedNavs.forEach(el => el.remove());
 
         // Hide unauthorized dashboard cards (Stock Alert and Total Parties)

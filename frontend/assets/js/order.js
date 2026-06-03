@@ -522,7 +522,7 @@ async function loadOrders(page = 1, search = '', status = '') {
     }
 
     try {
-        let url = `${API_URL}/orders?page=${page}`;
+        let url = `${API_URL}/orders?page=${page}&per_page=5`;
         if (search) {
             url += `&search=${encodeURIComponent(search)}`;
         }
@@ -1195,7 +1195,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.title = document.title.replace('Admin Panel', 'User Panel');
 
         // Hide unauthorized sidebar navigation options
-        const unauthorizedNavs = document.querySelectorAll('.sidebar-nav a[href="party.html"], .sidebar-nav a[href="stock.html"], .sidebar-nav a[href="user.html"], .sidebar-nav a[href="transport.html"]');
+        const unauthorizedNavs = document.querySelectorAll('.sidebar-nav a[href="party.html"], .sidebar-nav a[href="stock.html"], .sidebar-nav a[href="user.html"], .sidebar-nav a[href="transport.html"], .sidebar-nav a[href="alerts.html"]');
         unauthorizedNavs.forEach(el => el.remove());
 
         // Hide '+ Add' party redirect button in the order modal
