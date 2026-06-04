@@ -51,10 +51,7 @@ function initializeThemeSystem() {
         localStorage.setItem('dashboard_theme', newTheme);
         updateThemeButtonIcon(themeBtn, newTheme);
         
-        // Toast feedback if toast container/function is present
-        if (typeof showToast === 'function') {
-            showToast(`Switched to ${newTheme} theme`, 'success');
-        }
+
     });
 }
 
