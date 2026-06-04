@@ -8,7 +8,7 @@ Route::get('/', function () {
 
 Route::get('/login', function () {
     return response()->file(public_path('login.html'));
-});
+})->name('login');
 
 Route::get('/dashboard', function () {
     return response()->file(public_path('dashboard.html'));

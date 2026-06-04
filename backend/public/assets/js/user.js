@@ -15,6 +15,9 @@ if (userRole !== 'Admin') {
     window.location.href = 'dashboard';
 }
 
+const dashboardContent = document.getElementById('dashboardContent');
+if (dashboardContent) dashboardContent.style.display = 'flex';
+
 const headers = {
     'Authorization': `Bearer ${token}`,
     'Accept': 'application/json',
@@ -91,13 +94,15 @@ function setLoading(btnElement, isLoading) {
 async function loadUsers(page = 1, search = '') {
     try {
         setLoading(searchUserBtn, true);
-        userTableBody.innerHTML = `
-            <tr>
-                <td colspan="6" class="text-center" style="padding: 40px; color: var(--text-secondary);">
-                    <div class="loader" style="display: block; margin: 0 auto 12px; border-top-color: var(--primary-color);"></div>
-                    <div style="font-size: 14px; font-weight: 500;">Loading users...</div>
-                </td>
-            </tr>`;
+        if (users.length === 0) {
+            userTableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center" style="padding: 40px; color: var(--text-secondary);">
+                        <div class="loader" style="display: block; margin: 0 auto 12px; border-top-color: var(--primary-color);"></div>
+                        <div style="font-size: 14px; font-weight: 500;">Loading users...</div>
+                    </td>
+                </tr>`;
+        }
         
         let url = `${API_URL}/users?page=${page}`;
         if (search) {
@@ -108,6 +113,11 @@ async function loadUsers(page = 1, search = '') {
         if (response.ok) {
             const data = await response.json();
             users = data.data; // paginated items
+            
+            if (page === 1 && !search) {
+                localStorage.setItem('cached_users_data', JSON.stringify(data));
+            }
+            
             renderTable(users);
             renderPagination(data);
         } else if (response.status === 401) {
@@ -446,6 +456,19 @@ function configureSidebar() {
 // Initial Load
 document.addEventListener('DOMContentLoaded', () => {
     configureSidebar();
+    
+    // Check if we have cached users
+    const cachedUsersData = localStorage.getItem('cached_users_data');
+    if (cachedUsersData) {
+        try {
+            const parsed = JSON.parse(cachedUsersData);
+            users = parsed.data;
+            renderTable(users);
+            renderPagination(parsed);
+        } catch(e) {}
+    }
+    
+    // Fetch fresh data asynchronously so it doesn't block the UI
     loadUsers(currentPage, currentSearch);
 });
 

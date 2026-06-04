@@ -12,9 +12,11 @@ use App\Http\Controllers\OtpController;
 use App\Http\Controllers\TransportController;
 use App\Http\Controllers\NotificationController;
 
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/send-otp', [OtpController::class, 'sendOtp']);
-Route::post('/verify-otp', [OtpController::class, 'verifyOtp']);
+Route::middleware('throttle:10,1')->group(function () {
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/send-otp', [OtpController::class, 'sendOtp']);
+    Route::post('/verify-otp', [OtpController::class, 'verifyOtp']);
+});
 
 Route::middleware('auth:api')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);

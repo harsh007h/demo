@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const dashboardContent = document.getElementById('dashboardContent');
+    if (dashboardContent) dashboardContent.style.display = 'flex';
     const userNameElement = document.getElementById('userName');
     const userEmailElement = document.getElementById('userEmail');
     const avatarInitial = document.getElementById('avatarInitial');
@@ -217,6 +218,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
+        // Start stats fetch concurrently to speed up loading
+        const statsPromise = loadStats();
+
         // Fetch user data
         const response = await fetch(`${API_URL}/user`, {
             method: 'GET',
@@ -314,11 +318,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
 
-            // Show dashboard content
-            dashboardContent.style.display = 'flex';
-
-            // Load all stats dynamically
-            await loadStats();
+            // Wait for stats to finish if not already done
+            await statsPromise;
         } else {
             // Token invalid or expired
             console.warn('Session expired or invalid token');

@@ -17,28 +17,37 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Order::with(['party', 'items']);
-        
-        if ($request->has('search') && !empty($request->search)) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('transport_name', 'LIKE', "%{$search}%")
-                  ->orWhere('transport_number', 'LIKE', "%{$search}%")
-                  ->orWhere('notes', 'LIKE', "%{$search}%")
-                  ->orWhereHas('party', function($qp) use ($search) {
-                      $qp->where('name', 'LIKE', "%{$search}%")
-                        ->orWhere('mobile', 'LIKE', "%{$search}%");
-                  });
-            });
-        }
-        
-        if ($request->has('status') && !empty($request->status)) {
-            $query->where('status', $request->status);
-        }
-
+        $page = $request->input('page', 1);
         $perPage = $request->input('per_page', 10);
-        $orders = $query->orderBy('id', 'desc')->paginate($perPage);
-        return response()->json($orders);
+        $search = $request->input('search', '');
+        $status = $request->input('status', '');
+
+        $version = \Illuminate\Support\Facades\Cache::get('order_cache_version', 1);
+        $cacheKey = "orders_v{$version}_page_{$page}_per_{$perPage}_search_" . md5($search) . "_status_{$status}";
+
+        $result = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($search, $status, $perPage) {
+            $query = Order::with(['party', 'items']);
+            
+            if (!empty($search)) {
+                $query->where(function($q) use ($search) {
+                    $q->where('transport_name', 'LIKE', "%{$search}%")
+                      ->orWhere('transport_number', 'LIKE', "%{$search}%")
+                      ->orWhere('notes', 'LIKE', "%{$search}%")
+                      ->orWhereHas('party', function($qp) use ($search) {
+                          $qp->where('name', 'LIKE', "%{$search}%")
+                            ->orWhere('mobile', 'LIKE', "%{$search}%");
+                      });
+                });
+            }
+            
+            if (!empty($status)) {
+                $query->where('status', $status);
+            }
+
+            return $query->orderBy('id', 'desc')->paginate($perPage);
+        });
+
+        return response()->json($result);
     }
 
     /**
@@ -46,13 +55,17 @@ class OrderController extends Controller
      */
     public function stats()
     {
-        $totalOrders = Order::count();
-        $pendingOrders = Order::where('status', 'Pending')->count();
+        $version = \Illuminate\Support\Facades\Cache::get('order_cache_version', 1);
+        $cacheKey = "orders_stats_v{$version}";
 
-        return response()->json([
-            'total_orders' => $totalOrders,
-            'pending_orders' => $pendingOrders
-        ]);
+        $stats = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () {
+            return [
+                'total_orders' => Order::count(),
+                'pending_orders' => Order::where('status', 'Pending')->count()
+            ];
+        });
+
+        return response()->json($stats);
     }
 
     /**
@@ -102,6 +115,9 @@ class OrderController extends Controller
                     $stock->save();
                 }
             }
+            \Illuminate\Support\Facades\Cache::increment('order_cache_version');
+            \Illuminate\Support\Facades\Cache::increment('stock_cache_version');
+            \Illuminate\Support\Facades\Cache::increment('notification_cache_version');
             return response()->json($order->load('items'), 201);
         });
     }
@@ -192,7 +208,9 @@ class OrderController extends Controller
                     }
                 }
             }
-
+            \Illuminate\Support\Facades\Cache::increment('order_cache_version');
+            \Illuminate\Support\Facades\Cache::increment('stock_cache_version');
+            \Illuminate\Support\Facades\Cache::increment('notification_cache_version');
             return response()->json($order->load('items'));
         });
     }
@@ -218,6 +236,9 @@ class OrderController extends Controller
             }
             $order->delete();
         });
+
+        \Illuminate\Support\Facades\Cache::increment('order_cache_version');
+        \Illuminate\Support\Facades\Cache::increment('stock_cache_version');
 
         return response()->json(['message' => 'Order deleted successfully']);
     }

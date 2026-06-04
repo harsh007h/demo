@@ -16,6 +16,7 @@ if (userRole !== 'Admin') {
 document.addEventListener('DOMContentLoaded', async () => {
     // DOM Elements
     const dashboardContent = document.getElementById('dashboardContent');
+    if (dashboardContent) dashboardContent.style.display = 'flex';
     const userNameElement = document.getElementById('userName');
     const userEmailElement = document.getElementById('userEmail');
     const avatarInitial = document.getElementById('avatarInitial');
@@ -72,6 +73,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             created_at: new Date(Date.now() - 360 * 60000).toISOString()
         }
     ];
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialSection = urlParams.get('filter') === 'alerts' ? 'Alert Name' : 'all';
+
+    const cachedAlertsData = localStorage.getItem('cached_alerts_data');
+    if (cachedAlertsData) {
+        try {
+            notifications = JSON.parse(cachedAlertsData);
+            setSection(initialSection);
+        } catch(e) {}
+    }
+
 
     // Helper: Determine if notification belongs to "Alert Name" section
     function isAlertNotification(item) {
@@ -220,7 +233,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             
             feedHeaderTitle.textContent = 'Alert Name section';
-            alertsTitle.textContent = 'Alerts Center - Alert Name';
+            alertsTitle.textContent = 'Alerts';
         } else {
             if (filterAllBtn) {
                 filterAllBtn.classList.add('active');
@@ -232,7 +245,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             
             feedHeaderTitle.textContent = 'All Notifications';
-            alertsTitle.textContent = 'Alerts Center - All';
+            alertsTitle.textContent = 'Alerts';
         }
 
         renderFeed();
@@ -301,6 +314,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Load User and Stats/Notifications
     try {
+        // Start notifications fetch concurrently to speed up loading
+        const notifPromise = fetch(`${API_URL}/notifications`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
+        }).catch(e => {
+            console.warn('API error, using dummy notifications:', e);
+            return null;
+        });
+
         const response = await fetch(`${API_URL}/user`, {
             method: 'GET',
             headers: {
@@ -313,9 +337,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const user = await response.json();
             
             // Populate user info
-            userNameElement.textContent = user.name;
-            userEmailElement.textContent = user.email;
-            if (user.name) {
+            if (userNameElement) userNameElement.textContent = user.name;
+            if (userEmailElement) userEmailElement.textContent = user.email;
+            if (avatarInitial && user.name) {
                 avatarInitial.textContent = user.name.charAt(0).toUpperCase();
             }
 
@@ -346,32 +370,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Fetch Notifications list
             try {
-                const notifRes = await fetch(`${API_URL}/notifications`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Accept': 'application/json'
-                    }
-                });
+                const notifRes = await notifPromise;
                 
-                if (notifRes.ok) {
+                if (notifRes && notifRes.ok) {
                     notifications = await notifRes.json();
+                    localStorage.setItem('cached_alerts_data', JSON.stringify(notifications));
                 } else {
                     notifications = dummyNotifications;
                 }
             } catch (e) {
-                console.warn('API error, using dummy notifications:', e);
+                console.warn('Error parsing notifications:', e);
                 notifications = dummyNotifications;
             }
 
-            // Show page content
-            dashboardContent.style.display = 'flex';
-
-            // Initial view: check if page requested Alert Name filter directly
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('filter') === 'alerts') {
-                setSection('Alert Name');
+            // Initial view or re-render
+            if (!cachedAlertsData) {
+                setSection(initialSection);
             } else {
-                setSection('all');
+                renderFeed();
             }
 
         } else {
@@ -381,11 +397,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (e) {
         console.error('Error connecting to user profile:', e);
         // Fallback for dashboard showcase
-        userNameElement.textContent = "Admin Demo";
-        userEmailElement.textContent = "admin@demo.com";
-        avatarInitial.textContent = "A";
+        if (userNameElement) userNameElement.textContent = "Admin Demo";
+        if (userEmailElement) userEmailElement.textContent = "admin@demo.com";
+        if (avatarInitial) avatarInitial.textContent = "A";
         notifications = dummyNotifications;
-        dashboardContent.style.display = 'flex';
         setSection('all');
     }
 

@@ -10,16 +10,25 @@ class PartyController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Party::query();
-        
-        if ($request->has('search') && !empty($request->search)) {
-            $search = $request->search;
-            $query->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('mobile', 'LIKE', "%{$search}%");
-        }
-        
+        $page = $request->input('page', 1);
         $perPage = $request->input('per_page', 10);
-        return response()->json($query->orderBy('id', 'desc')->paginate($perPage));
+        $search = $request->input('search', '');
+
+        $version = \Illuminate\Support\Facades\Cache::get('party_cache_version', 1);
+        $cacheKey = "parties_v{$version}_page_{$page}_per_{$perPage}_search_" . md5($search);
+
+        $result = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($search, $perPage) {
+            $query = Party::query();
+            
+            if (!empty($search)) {
+                $query->where('name', 'LIKE', "%{$search}%")
+                      ->orWhere('mobile', 'LIKE', "%{$search}%");
+            }
+            
+            return $query->orderBy('id', 'desc')->paginate($perPage);
+        });
+
+        return response()->json($result);
     }
 
     public function store(Request $request)
@@ -34,6 +43,7 @@ class PartyController extends Controller
         ]);
 
         $party = Party::create($validated);
+        \Illuminate\Support\Facades\Cache::increment('party_cache_version');
         return response()->json($party, 201);
     }
 
@@ -57,6 +67,7 @@ class PartyController extends Controller
         ]);
 
         $party->update($validated);
+        \Illuminate\Support\Facades\Cache::increment('party_cache_version');
         return response()->json($party);
     }
 
@@ -64,6 +75,7 @@ class PartyController extends Controller
     {
         $party = Party::findOrFail($id);
         $party->delete();
+        \Illuminate\Support\Facades\Cache::increment('party_cache_version');
         return response()->json(null, 204);
     }
 }

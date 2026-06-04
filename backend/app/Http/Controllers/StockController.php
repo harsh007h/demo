@@ -13,22 +13,27 @@ class StockController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Stock::query();
-
-        if ($request->has('search') && !empty($request->search)) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('product_name', 'LIKE', "%{$search}%")
-                  ->orWhere('product_size', 'LIKE', "%{$search}%");
-            });
-        }
-
-        // Support custom page sizes, defaulting to 10
+        $page = $request->input('page', 1);
         $perPage = $request->input('per_page', 10);
+        $search = $request->input('search', '');
 
-        // Return paginated results, sorted by id desc
-        $stocks = $query->orderBy('id', 'desc')->paginate($perPage);
-        return response()->json($stocks);
+        $version = \Illuminate\Support\Facades\Cache::get('stock_cache_version', 1);
+        $cacheKey = "stocks_v{$version}_page_{$page}_per_{$perPage}_search_" . md5($search);
+
+        $result = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($search, $perPage) {
+            $query = Stock::query();
+
+            if (!empty($search)) {
+                $query->where(function($q) use ($search) {
+                    $q->where('product_name', 'LIKE', "%{$search}%")
+                      ->orWhere('product_size', 'LIKE', "%{$search}%");
+                });
+            }
+
+            return $query->orderBy('id', 'desc')->paginate($perPage);
+        });
+
+        return response()->json($result);
     }
 
     /**
@@ -51,6 +56,7 @@ class StockController extends Controller
         }
 
         $stock = Stock::create($validated);
+        \Illuminate\Support\Facades\Cache::increment('stock_cache_version');
         return response()->json($stock, 201);
     }
 
@@ -88,6 +94,7 @@ class StockController extends Controller
         }
 
         $stock->update($validated);
+        \Illuminate\Support\Facades\Cache::increment('stock_cache_version');
         return response()->json($stock);
     }
 
@@ -98,6 +105,7 @@ class StockController extends Controller
     {
         $stock = Stock::findOrFail($id);
         $stock->delete();
+        \Illuminate\Support\Facades\Cache::increment('stock_cache_version');
         return response()->json(null, 204);
     }
 
@@ -106,12 +114,16 @@ class StockController extends Controller
      */
     public function stats()
     {
-        $totalItems = Stock::count();
-        $lowStockCount = Stock::where('quantity', '<', 10)->count();
+        $version = \Illuminate\Support\Facades\Cache::get('stock_cache_version', 1);
+        $cacheKey = "stocks_stats_v{$version}";
 
-        return response()->json([
-            'total_items' => $totalItems,
-            'low_stock_count' => $lowStockCount
-        ]);
+        $stats = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () {
+            return [
+                'total_items' => Stock::count(),
+                'low_stock_count' => Stock::where('quantity', '<', 10)->count()
+            ];
+        });
+
+        return response()->json($stats);
     }
 }

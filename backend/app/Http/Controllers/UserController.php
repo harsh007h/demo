@@ -14,19 +14,28 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::query();
-
-        if ($request->has('search') && !empty($request->search)) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('email', 'LIKE', "%{$search}%")
-                  ->orWhere('mobile', 'LIKE', "%{$search}%");
-            });
-        }
-
+        $page = $request->input('page', 1);
         $perPage = $request->input('per_page', 10);
-        return response()->json($query->orderBy('id', 'desc')->paginate($perPage));
+        $search = $request->input('search', '');
+
+        $version = \Illuminate\Support\Facades\Cache::get('user_cache_version', 1);
+        $cacheKey = "users_v{$version}_page_{$page}_per_{$perPage}_search_" . md5($search);
+
+        $result = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($search, $perPage) {
+            $query = User::query();
+
+            if (!empty($search)) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'LIKE', "%{$search}%")
+                      ->orWhere('email', 'LIKE', "%{$search}%")
+                      ->orWhere('mobile', 'LIKE', "%{$search}%");
+                });
+            }
+
+            return $query->orderBy('id', 'desc')->paginate($perPage);
+        });
+
+        return response()->json($result);
     }
 
     /**
@@ -46,6 +55,8 @@ class UserController extends Controller
         $validated['password'] = Hash::make($request->password);
 
         $user = User::create($validated);
+
+        \Illuminate\Support\Facades\Cache::increment('user_cache_version');
 
         return response()->json($user, 201);
     }
@@ -97,6 +108,8 @@ class UserController extends Controller
 
         $user->update($validated);
 
+        \Illuminate\Support\Facades\Cache::increment('user_cache_version');
+
         return response()->json($user);
     }
 
@@ -115,6 +128,8 @@ class UserController extends Controller
         }
 
         $user->delete();
+
+        \Illuminate\Support\Facades\Cache::increment('user_cache_version');
 
         return response()->json(null, 204);
     }

@@ -99,13 +99,15 @@ function configureAccessUI() {
 async function loadTransports(page = 1, search = '') {
     try {
         setLoading(searchTransportBtn, true);
-        transportTableBody.innerHTML = `
-            <tr>
-                <td colspan="4" class="text-center" style="padding: 40px; color: var(--text-secondary);">
-                    <div class="loader" style="display: block; margin: 0 auto 12px; border-top-color: var(--primary-color);"></div>
-                    <div style="font-size: 14px; font-weight: 500;">Loading transports...</div>
-                </td>
-            </tr>`;
+        if (transports.length === 0) {
+            transportTableBody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center" style="padding: 40px; color: var(--text-secondary);">
+                        <div class="loader" style="display: block; margin: 0 auto 12px; border-top-color: var(--primary-color);"></div>
+                        <div style="font-size: 14px; font-weight: 500;">Loading transports...</div>
+                    </td>
+                </tr>`;
+        }
         
         let url = `${API_URL}/transports?page=${page}`;
         if (search) {
@@ -116,6 +118,11 @@ async function loadTransports(page = 1, search = '') {
         if (response.ok) {
             const data = await response.json();
             transports = data.data; // paginated items
+            
+            if (page === 1 && !search) {
+                localStorage.setItem('cached_transports_data', JSON.stringify(data));
+            }
+            
             renderTable(transports, data.from || 1);
             renderPagination(data);
         } else if (response.status === 401) {
@@ -452,6 +459,17 @@ function configureSidebar() {
 document.addEventListener('DOMContentLoaded', () => {
     configureSidebar();
     configureAccessUI();
+    
+    const cachedTransportsData = localStorage.getItem('cached_transports_data');
+    if (cachedTransportsData) {
+        try {
+            const parsed = JSON.parse(cachedTransportsData);
+            transports = parsed.data;
+            renderTable(transports, parsed.from || 1);
+            renderPagination(parsed);
+        } catch(e) {}
+    }
+    
     loadTransports(currentPage, currentSearch);
 });
 

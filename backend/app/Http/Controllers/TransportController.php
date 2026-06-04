@@ -13,15 +13,24 @@ class TransportController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Transport::query();
-        
-        if ($request->has('search') && !empty($request->search)) {
-            $search = $request->search;
-            $query->where('transport_name', 'LIKE', "%{$search}%");
-        }
-        
+        $page = $request->input('page', 1);
         $perPage = $request->input('per_page', 10);
-        return response()->json($query->orderBy('id', 'desc')->paginate($perPage));
+        $search = $request->input('search', '');
+
+        $version = \Illuminate\Support\Facades\Cache::get('transport_cache_version', 1);
+        $cacheKey = "transports_v{$version}_page_{$page}_per_{$perPage}_search_" . md5($search);
+
+        $result = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($search, $perPage) {
+            $query = Transport::query();
+            
+            if (!empty($search)) {
+                $query->where('transport_name', 'LIKE', "%{$search}%");
+            }
+            
+            return $query->orderBy('id', 'desc')->paginate($perPage);
+        });
+
+        return response()->json($result);
     }
 
     /**
@@ -34,6 +43,7 @@ class TransportController extends Controller
         ]);
 
         $transport = Transport::create($validated);
+        \Illuminate\Support\Facades\Cache::increment('transport_cache_version');
         return response()->json($transport, 201);
     }
 
@@ -58,6 +68,7 @@ class TransportController extends Controller
         ]);
 
         $transport->update($validated);
+        \Illuminate\Support\Facades\Cache::increment('transport_cache_version');
         return response()->json($transport);
     }
 
@@ -68,6 +79,7 @@ class TransportController extends Controller
     {
         $transport = Transport::findOrFail($id);
         $transport->delete();
+        \Illuminate\Support\Facades\Cache::increment('transport_cache_version');
         return response()->json(null, 204);
     }
 }
