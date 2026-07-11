@@ -1875,8 +1875,75 @@ body.light-theme .bg-shape {
 }
 
 body.light-theme .menu-toggle-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
 }
+
+/* ==========================================================================
+   Additional Mobile Layout Fixes
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* Fix Add Order Modal */
+  #orderForm {
+    flex-direction: column !important;
+  }
+  
+  #orderForm > div {
+    width: 100% !important;
+    padding: 0 !important;
+  }
+  
+  /* Fix Modal Container */
+  .modal-content {
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    padding: 20px !important;
+    width: 95% !important;
+  }
+  
+  /* Fix Filters & Search inputs */
+  .header-actions, .filter-bar {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px;
+  }
+  
+  .header-actions input, 
+  .header-actions select, 
+  .header-actions button,
+  .filter-bar input,
+  .filter-bar select,
+  .filter-bar button {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+  
+  /* Dashboard Main Content Fixes */
+  .dashboard-layout {
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  .main-content {
+    padding: 16px !important;
+    gap: 16px !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+    flex: 1 1 100% !important;
+  }
+  
+  .dashboard-cards,
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  
+  .stat-card {
+    padding: 16px !important;
+  }
+}
+
 
 /* Responsive Mobile Sidebar & Overlay */
 @media (max-width: 768px) {

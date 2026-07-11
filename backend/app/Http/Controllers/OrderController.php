@@ -11,9 +11,20 @@ use App\Models\OrderLog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Gate;
+use App\Http\Requests\StoreOrderRequest;
+use App\Http\Requests\UpdateOrderRequest;
+use App\Http\Resources\OrderResource;
+use App\Services\OrderService;
 
 class OrderController extends Controller
 {
+    protected OrderService $orderService;
+
+    public function __construct(OrderService $orderService)
+    {
+        $this->orderService = $orderService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -54,7 +65,11 @@ class OrderController extends Controller
                 $query->where('status', $status);
             }
 
-            return $query->orderBy('id', 'desc')->paginate($perPage);
+            $paginator = $query->orderBy('id', 'desc')->paginate($perPage);
+            
+            // Format items using Resource while keeping standard Paginator structure
+            $paginator->setCollection(OrderResource::collection($paginator->getCollection())->collection);
+            return $paginator;
         });
 
         return response()->json($result);
@@ -86,72 +101,15 @@ class OrderController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreOrderRequest $request)
     {
-        $validated = $request->validate([
-            'order_date' => 'required|date',
-            'party_id' => 'required|exists:parties,id',
-            'transport_name' => 'required|string',
-            'transport_number' => 'nullable|string',
-            'payment_method' => 'required|string',
-            'status' => 'required|string',
-            'notes' => 'nullable|string',
-            'user_id' => 'sometimes|exists:users,id',
-            'products' => 'required|array|min:1',
-            'products.*.serial_no' => 'required|string',
-            'products.*.size' => 'required|string',
-            'products.*.pieces' => 'required|integer|min:1',
-        ]);
+        $order = $this->orderService->createOrder($request->validated());
+        \Illuminate\Support\Facades\Cache::put('order_cache_version', microtime(true));
 
-        $userId = auth()->id();
-        if (auth()->user()->role === 'Admin' && isset($validated['user_id'])) {
-            $userId = $validated['user_id'];
-        }
-
-        return DB::transaction(function () use ($validated, $userId) {
-            $orderData = Arr::except($validated, ['products', 'user_id']);
-            $orderData['user_id'] = $userId;
-            
-            $order = Order::create($orderData);
-            
-            OrderLog::create([
-                'order_id' => $order->id,
-                'new_owner_id' => $userId,
-                'performed_by' => auth()->id(),
-                'action' => 'created',
-            ]);
-
-            foreach ($validated['products'] as $product) {
-                $order->items()->create([
-                    'serial_no' => $product['serial_no'],
-                    'size' => $product['size'],
-                    'pieces' => $product['pieces'],
-                ]);
-
-                // Decrement stock quantity
-                $stock = \App\Models\Stock::where('product_name', $product['serial_no'])->where('product_size', $product['size'])->first();
-                $availableStock = $stock ? $stock->quantity : 0;
-
-                if ($product['pieces'] > $availableStock) {
-                    $shortage = $product['pieces'] - $availableStock;
-                    \App\Models\Notification::create([
-                        'title' => 'Stock Shortage',
-                        'message' => "{$product['size']} Size stock shortage.\nNeed to produce {$shortage} more pieces.",
-                        'type' => 'stock_shortage',
-                        'is_read' => false,
-                    ]);
-                }
-
-                if ($stock) {
-                    $stock->quantity = max(0, $stock->quantity - $product['pieces']);
-                    $stock->save();
-                }
-            }
-            \Illuminate\Support\Facades\Cache::put('order_cache_version', microtime(true));
-            \Illuminate\Support\Facades\Cache::put('stock_cache_version', microtime(true));
-            \Illuminate\Support\Facades\Cache::put('notification_cache_version', microtime(true));
-            return response()->json($order->load('items'), 201);
-        });
+        return response()->json([
+            'message' => 'Order created successfully',
+            'order' => new OrderResource($order),
+        ], 201);
     }
 
     /**
@@ -159,20 +117,21 @@ class OrderController extends Controller
      */
     public function show(string $id)
     {
-        $order = Order::with(['party', 'items', 'user'])->find($id);
+        $order = Order::with(['party', 'items', 'user', 'logs.performer'])->find($id);
+        
         if (!$order) {
             return response()->json(['message' => 'Order not found'], 404);
         }
-        
+
         Gate::authorize('view', $order);
-        
-        return response()->json($order);
+
+        return response()->json(new OrderResource($order));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateOrderRequest $request, string $id)
     {
         $order = Order::with('items')->find($id);
         if (!$order) {
@@ -181,95 +140,13 @@ class OrderController extends Controller
 
         Gate::authorize('update', $order);
 
-        $validated = $request->validate([
-            'order_date' => 'sometimes|required|date',
-            'party_id' => 'sometimes|required|exists:parties,id',
-            'transport_name' => 'sometimes|required|string',
-            'transport_number' => 'nullable|string',
-            'payment_method' => 'sometimes|required|string',
-            'status' => 'sometimes|required|string',
-            'notes' => 'nullable|string',
-            'user_id' => 'sometimes|exists:users,id',
-            'products' => 'sometimes|required|array|min:1',
-            'products.*.serial_no' => 'required|string',
-            'products.*.size' => 'required|string',
-            'products.*.pieces' => 'required|integer|min:1',
+        $updatedOrder = $this->orderService->updateOrder($order, $request->validated());
+        \Illuminate\Support\Facades\Cache::put('order_cache_version', microtime(true));
+
+        return response()->json([
+            'message' => 'Order updated successfully',
+            'order' => new OrderResource($updatedOrder),
         ]);
-
-        return DB::transaction(function () use ($order, $validated) {
-            $previousOwner = $order->user_id;
-
-            if (auth()->user()->role === 'Admin' && isset($validated['user_id'])) {
-                $order->user_id = $validated['user_id'];
-            }
-
-            $action = 'updated';
-            if ($previousOwner != $order->user_id) {
-                $action = 'reassigned';
-            }
-
-            OrderLog::create([
-                'order_id' => $order->id,
-                'previous_owner_id' => $previousOwner,
-                'new_owner_id' => $order->user_id,
-                'performed_by' => auth()->id(),
-                'action' => $action,
-            ]);
-
-            // Restore stock levels from previous order items
-            foreach ($order->items as $item) {
-                $stock = \App\Models\Stock::where('product_name', $item->serial_no)->where('product_size', $item->size)->first();
-                if ($stock) {
-                    $stock->quantity += $item->pieces;
-                    $stock->save();
-                }
-            }
-
-            $order->update(Arr::except($validated, ['products', 'user_id']));
-
-            if (isset($validated['products'])) {
-                $order->items()->delete();
-                foreach ($validated['products'] as $product) {
-                    $order->items()->create([
-                        'serial_no' => $product['serial_no'],
-                        'size' => $product['size'],
-                        'pieces' => $product['pieces'],
-                    ]);
-
-                    // Deduct stock levels for updated order items
-                    $stock = \App\Models\Stock::where('product_name', $product['serial_no'])->where('product_size', $product['size'])->first();
-                    $availableStock = $stock ? $stock->quantity : 0;
-
-                    if ($product['pieces'] > $availableStock) {
-                        $shortage = $product['pieces'] - $availableStock;
-                        \App\Models\Notification::create([
-                            'title' => 'Stock Shortage',
-                            'message' => "{$product['size']} Size stock shortage.\nNeed to produce {$shortage} more pieces.",
-                            'type' => 'stock_shortage',
-                            'is_read' => false,
-                        ]);
-                    }
-
-                    if ($stock) {
-                        $stock->quantity = max(0, $stock->quantity - $product['pieces']);
-                        $stock->save();
-                    }
-                }
-            } else {
-                // If products were not updated, re-apply deductions to stay balanced
-                foreach ($order->items as $item) {
-                    $stock = \App\Models\Stock::where('product_name', $item->serial_no)->where('product_size', $item->size)->first();
-                    if ($stock) {
-                        $stock->quantity = max(0, $stock->quantity - $item->pieces);
-                        $stock->save();
-                    }
-                }
-            }
-            \Illuminate\Support\Facades\Cache::put('order_cache_version', microtime(true));
-            \Illuminate\Support\Facades\Cache::put('stock_cache_version', microtime(true));
-            \Illuminate\Support\Facades\Cache::put('notification_cache_version', microtime(true));
-            return response()->json($order->load('items'));
-        });
     }
 
     /**

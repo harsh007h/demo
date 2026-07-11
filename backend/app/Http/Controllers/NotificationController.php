@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Notification;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
@@ -10,13 +9,29 @@ class NotificationController extends Controller
     /**
      * Display a listing of notifications.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $version = \Illuminate\Support\Facades\Cache::get('notification_cache_version', 1);
-        $cacheKey = "notifications_v{$version}_limit100";
+        $user = $request->user();
+        if (!$user) {
+            // Admins logic? In the previous setup, it was just grabbing all notifications from the global table.
+            // Let's get all users who are admins and get their notifications, or just use the current user.
+            // Since this was an admin-only route before:
+            $user = \App\Models\User::role('Admin')->first();
+        }
 
-        $notifications = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () {
-            return Notification::orderBy('id', 'desc')->limit(100)->get();
+        if (!$user) {
+            return response()->json([]);
+        }
+
+        $notifications = $user->notifications()->limit(100)->get()->map(function ($notification) {
+            return [
+                'id' => $notification->id,
+                'title' => $notification->data['title'] ?? 'Notification',
+                'message' => $notification->data['message'] ?? '',
+                'type' => $notification->data['type'] ?? 'info',
+                'is_read' => $notification->read_at !== null,
+                'created_at' => $notification->created_at,
+            ];
         });
 
         return response()->json($notifications);
@@ -25,26 +40,30 @@ class NotificationController extends Controller
     /**
      * Mark the specified notification as read.
      */
-    public function markAsRead(string $id)
+    public function markAsRead(Request $request, string $id)
     {
-        $notification = Notification::findOrFail($id);
-        $notification->is_read = true;
-        $notification->save();
+        $user = $request->user() ?? \App\Models\User::role('Admin')->first();
+        $notification = $user->notifications()->where('id', $id)->firstOrFail();
+        $notification->markAsRead();
 
-        \Illuminate\Support\Facades\Cache::put('notification_cache_version', microtime(true));
-
-        return response()->json($notification);
+        return response()->json([
+            'id' => $notification->id,
+            'title' => $notification->data['title'] ?? 'Notification',
+            'message' => $notification->data['message'] ?? '',
+            'type' => $notification->data['type'] ?? 'info',
+            'is_read' => true,
+            'created_at' => $notification->created_at,
+        ]);
     }
 
     /**
      * Remove the specified notification from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        $notification = Notification::findOrFail($id);
+        $user = $request->user() ?? \App\Models\User::role('Admin')->first();
+        $notification = $user->notifications()->where('id', $id)->firstOrFail();
         $notification->delete();
-
-        \Illuminate\Support\Facades\Cache::put('notification_cache_version', microtime(true));
 
         return response()->json(['message' => 'Notification deleted successfully']);
     }

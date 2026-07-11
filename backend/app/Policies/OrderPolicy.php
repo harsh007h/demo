@@ -9,23 +9,11 @@ use Illuminate\Auth\Access\Response;
 class OrderPolicy
 {
     /**
-     * Perform pre-authorization checks.
-     */
-    public function before(User $user, string $ability): bool|null
-    {
-        if ($user->role === 'Admin') {
-            return true;
-        }
-
-        return null;
-    }
-
-    /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        return true; // Staff can view ANY order, but the controller will filter the results to only their own.
+        return $user->hasPermissionTo('view orders');
     }
 
     /**
@@ -33,7 +21,10 @@ class OrderPolicy
      */
     public function view(User $user, Order $order): bool
     {
-        return $user->id === $order->user_id;
+        if ($user->hasPermissionTo('view orders') && ($user->id === $order->user_id || $user->hasRole('Admin'))) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -41,7 +32,7 @@ class OrderPolicy
      */
     public function create(User $user): bool
     {
-        return true; // Staff can create orders (will be assigned to themselves).
+        return $user->hasPermissionTo('create orders');
     }
 
     /**
@@ -49,7 +40,10 @@ class OrderPolicy
      */
     public function update(User $user, Order $order): bool
     {
-        return $user->id === $order->user_id;
+        if ($user->hasPermissionTo('update orders') && ($user->id === $order->user_id || $user->hasRole('Admin'))) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -57,7 +51,10 @@ class OrderPolicy
      */
     public function delete(User $user, Order $order): bool
     {
-        return $user->id === $order->user_id;
+        if ($user->hasPermissionTo('delete orders') && ($user->id === $order->user_id || $user->hasRole('Admin'))) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -65,7 +62,7 @@ class OrderPolicy
      */
     public function restore(User $user, Order $order): bool
     {
-        return $user->id === $order->user_id;
+        return $user->hasRole('Admin');
     }
 
     /**
@@ -73,6 +70,6 @@ class OrderPolicy
      */
     public function forceDelete(User $user, Order $order): bool
     {
-        return $user->id === $order->user_id;
+        return $user->hasRole('Admin');
     }
 }

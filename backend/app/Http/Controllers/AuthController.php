@@ -40,7 +40,10 @@ class AuthController extends Controller
             ], 403);
         }
 
-        $token = Str::random(60);
+        // Issue Sanctum token
+        $token = $user->createToken('auth_token')->plainTextToken;
+        
+        // Also update api_token column for full backward compatibility if something else relies on it
         $user->forceFill([
             'api_token' => $token,
         ])->save();
@@ -70,6 +73,8 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         if ($request->user()) {
+            $request->user()->tokens()->delete();
+            
             $request->user()->forceFill([
                 'api_token' => null,
             ])->save();

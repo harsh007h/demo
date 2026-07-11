@@ -13,8 +13,14 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'admin' => \App\Http\Middleware\CheckAdmin::class,
-            'role' => \App\Http\Middleware\CheckRole::class,
+            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+        ]);
+        
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+        $middleware->api(prepend: [
+            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

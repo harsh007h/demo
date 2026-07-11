@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Stock extends Model
 {
-    use HasFactory;
+    use HasFactory, Auditable, SoftDeletes;
 
     protected $fillable = [
         'product_name',

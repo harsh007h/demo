@@ -35,7 +35,7 @@ class PartyController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'mobile' => 'required|string|max:20|unique:parties,mobile',
+            'mobile' => 'required|string|digits:10|unique:parties,mobile',
             'state' => 'required|string|max:255',
             'city' => 'required|string|max:255',
             'pincode' => 'required|string|max:10',
@@ -59,7 +59,7 @@ class PartyController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
-            'mobile' => 'sometimes|required|string|max:20|unique:parties,mobile,' . $id,
+            'mobile' => 'sometimes|required|string|digits:10|unique:parties,mobile,' . $id,
             'state' => 'sometimes|required|string|max:255',
             'city' => 'sometimes|required|string|max:255',
             'pincode' => 'sometimes|required|string|max:10',

@@ -167,8 +167,10 @@ class OtpController extends Controller
             'verified_at' => now(),
         ]);
 
-        // 5. Generate token and log user in
-        $token = Str::random(60);
+        // 5. Generate token and log user in via Sanctum
+        $token = $user->createToken('auth_token')->plainTextToken;
+        
+        // Update api_token for backward compatibility if needed
         $user->forceFill([
             'api_token' => $token,
         ])->save();

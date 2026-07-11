@@ -18,7 +18,7 @@ Route::middleware('throttle:10,1')->group(function () {
     Route::post('/verify-otp', [OtpController::class, 'verifyOtp']);
 });
 
-Route::middleware('auth:api')->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
@@ -36,7 +36,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/stocks/{stock}', [StockController::class, 'show']);
 
     // Only Admins can modify parties/stocks or manage users
-    Route::middleware('admin')->group(function () {
+    Route::middleware('role:Admin')->group(function () {
         Route::post('/parties', [PartyController::class, 'store']);
         Route::put('/parties/{party}', [PartyController::class, 'update']);
         Route::delete('/parties/{party}', [PartyController::class, 'destroy']);
