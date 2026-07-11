@@ -13,7 +13,8 @@ class Order extends Model
         'transport_number',
         'payment_method',
         'status',
-        'notes'
+        'notes',
+        'user_id'
     ];
 
     public function items()
@@ -24,5 +25,15 @@ class Order extends Model
     public function party()
     {
         return $this->belongsTo(Party::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function logs()
+    {
+        return $this->hasMany(OrderLog::class);
     }
 }

@@ -4,13 +4,13 @@ const userRole = localStorage.getItem('user_role');
 
 // Redirect if not logged in
 if (!token) {
-    window.location.href = 'login';
+    window.location.href = '/login';
 }
 
 // Redirect to dashboard if user is not Admin
 if (userRole !== 'Admin') {
     alert('Access denied. Staff cannot access Alerts.');
-    window.location.href = 'dashboard';
+    window.location.href = '/dashboard';
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -306,8 +306,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch (error) {
                 console.error('Error logging out:', error);
             } finally {
-                localStorage.removeItem('api_token');
-                window.location.href = 'login';
+                localStorage.removeItem('api_token'); localStorage.removeItem('user_role'); localStorage.removeItem('user_name');
+                window.location.href = '/login';
             }
         });
     }
@@ -391,8 +391,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
         } else {
-            localStorage.removeItem('api_token');
-            window.location.href = 'login';
+            localStorage.removeItem('api_token'); localStorage.removeItem('user_role'); localStorage.removeItem('user_name');
+            window.location.href = '/login';
         }
     } catch (e) {
         console.error('Error connecting to user profile:', e);
@@ -417,8 +417,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (error) {
             console.error('Error logging out:', error);
         } finally {
-            localStorage.removeItem('api_token');
-            window.location.href = 'login';
+            localStorage.removeItem('api_token'); localStorage.removeItem('user_role'); localStorage.removeItem('user_name');
+            window.location.href = '/login';
         }
     });
 });

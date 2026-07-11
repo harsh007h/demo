@@ -7,8 +7,10 @@ use Illuminate\Http\Request;
 
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderLog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Gate;
 
 class OrderController extends Controller
 {
@@ -21,13 +23,21 @@ class OrderController extends Controller
         $perPage = $request->input('per_page', 10);
         $search = $request->input('search', '');
         $status = $request->input('status', '');
+        $userId = $request->input('user_id', '');
+        $user = $request->user();
 
         $version = \Illuminate\Support\Facades\Cache::get('order_cache_version', 1);
-        $cacheKey = "orders_v{$version}_page_{$page}_per_{$perPage}_search_" . md5($search) . "_status_{$status}";
+        $cacheKey = "orders_v{$version}_page_{$page}_per_{$perPage}_search_" . md5($search) . "_status_{$status}_user_{$userId}_auth_" . $user->id;
 
-        $result = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($search, $status, $perPage) {
-            $query = Order::with(['party', 'items']);
+        $result = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($search, $status, $perPage, $user, $userId) {
+            $query = Order::with(['party', 'items', 'user']);
             
+            if ($user->role !== 'Admin') {
+                $query->where('user_id', $user->id);
+            } else if (!empty($userId)) {
+                $query->where('user_id', $userId);
+            }
+
             if (!empty($search)) {
                 $query->where(function($q) use ($search) {
                     $q->where('transport_name', 'LIKE', "%{$search}%")
@@ -53,15 +63,20 @@ class OrderController extends Controller
     /**
      * Get order stats (total orders, pending orders count).
      */
-    public function stats()
+    public function stats(Request $request)
     {
+        $user = $request->user();
         $version = \Illuminate\Support\Facades\Cache::get('order_cache_version', 1);
-        $cacheKey = "orders_stats_v{$version}";
+        $cacheKey = "orders_stats_v{$version}_auth_" . $user->id;
 
-        $stats = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () {
+        $stats = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($user) {
+            $query = Order::query();
+            if ($user->role !== 'Admin') {
+                $query->where('user_id', $user->id);
+            }
             return [
-                'total_orders' => Order::count(),
-                'pending_orders' => Order::where('status', 'Pending')->count()
+                'total_orders' => (clone $query)->count(),
+                'pending_orders' => (clone $query)->where('status', 'Pending')->count()
             ];
         });
 
@@ -81,14 +96,31 @@ class OrderController extends Controller
             'payment_method' => 'required|string',
             'status' => 'required|string',
             'notes' => 'nullable|string',
+            'user_id' => 'sometimes|exists:users,id',
             'products' => 'required|array|min:1',
             'products.*.serial_no' => 'required|string',
             'products.*.size' => 'required|string',
             'products.*.pieces' => 'required|integer|min:1',
         ]);
 
-        return DB::transaction(function () use ($validated) {
-            $order = Order::create(Arr::except($validated, ['products']));
+        $userId = auth()->id();
+        if (auth()->user()->role === 'Admin' && isset($validated['user_id'])) {
+            $userId = $validated['user_id'];
+        }
+
+        return DB::transaction(function () use ($validated, $userId) {
+            $orderData = Arr::except($validated, ['products', 'user_id']);
+            $orderData['user_id'] = $userId;
+            
+            $order = Order::create($orderData);
+            
+            OrderLog::create([
+                'order_id' => $order->id,
+                'new_owner_id' => $userId,
+                'performed_by' => auth()->id(),
+                'action' => 'created',
+            ]);
+
             foreach ($validated['products'] as $product) {
                 $order->items()->create([
                     'serial_no' => $product['serial_no'],
@@ -115,9 +147,9 @@ class OrderController extends Controller
                     $stock->save();
                 }
             }
-            \Illuminate\Support\Facades\Cache::increment('order_cache_version');
-            \Illuminate\Support\Facades\Cache::increment('stock_cache_version');
-            \Illuminate\Support\Facades\Cache::increment('notification_cache_version');
+            \Illuminate\Support\Facades\Cache::put('order_cache_version', microtime(true));
+            \Illuminate\Support\Facades\Cache::put('stock_cache_version', microtime(true));
+            \Illuminate\Support\Facades\Cache::put('notification_cache_version', microtime(true));
             return response()->json($order->load('items'), 201);
         });
     }
@@ -127,10 +159,13 @@ class OrderController extends Controller
      */
     public function show(string $id)
     {
-        $order = Order::with(['party', 'items'])->find($id);
+        $order = Order::with(['party', 'items', 'user'])->find($id);
         if (!$order) {
             return response()->json(['message' => 'Order not found'], 404);
         }
+        
+        Gate::authorize('view', $order);
+        
         return response()->json($order);
     }
 
@@ -144,6 +179,8 @@ class OrderController extends Controller
             return response()->json(['message' => 'Order not found'], 404);
         }
 
+        Gate::authorize('update', $order);
+
         $validated = $request->validate([
             'order_date' => 'sometimes|required|date',
             'party_id' => 'sometimes|required|exists:parties,id',
@@ -152,6 +189,7 @@ class OrderController extends Controller
             'payment_method' => 'sometimes|required|string',
             'status' => 'sometimes|required|string',
             'notes' => 'nullable|string',
+            'user_id' => 'sometimes|exists:users,id',
             'products' => 'sometimes|required|array|min:1',
             'products.*.serial_no' => 'required|string',
             'products.*.size' => 'required|string',
@@ -159,6 +197,25 @@ class OrderController extends Controller
         ]);
 
         return DB::transaction(function () use ($order, $validated) {
+            $previousOwner = $order->user_id;
+
+            if (auth()->user()->role === 'Admin' && isset($validated['user_id'])) {
+                $order->user_id = $validated['user_id'];
+            }
+
+            $action = 'updated';
+            if ($previousOwner != $order->user_id) {
+                $action = 'reassigned';
+            }
+
+            OrderLog::create([
+                'order_id' => $order->id,
+                'previous_owner_id' => $previousOwner,
+                'new_owner_id' => $order->user_id,
+                'performed_by' => auth()->id(),
+                'action' => $action,
+            ]);
+
             // Restore stock levels from previous order items
             foreach ($order->items as $item) {
                 $stock = \App\Models\Stock::where('product_name', $item->serial_no)->where('product_size', $item->size)->first();
@@ -168,7 +225,7 @@ class OrderController extends Controller
                 }
             }
 
-            $order->update(Arr::except($validated, ['products']));
+            $order->update(Arr::except($validated, ['products', 'user_id']));
 
             if (isset($validated['products'])) {
                 $order->items()->delete();
@@ -208,9 +265,9 @@ class OrderController extends Controller
                     }
                 }
             }
-            \Illuminate\Support\Facades\Cache::increment('order_cache_version');
-            \Illuminate\Support\Facades\Cache::increment('stock_cache_version');
-            \Illuminate\Support\Facades\Cache::increment('notification_cache_version');
+            \Illuminate\Support\Facades\Cache::put('order_cache_version', microtime(true));
+            \Illuminate\Support\Facades\Cache::put('stock_cache_version', microtime(true));
+            \Illuminate\Support\Facades\Cache::put('notification_cache_version', microtime(true));
             return response()->json($order->load('items'));
         });
     }
@@ -225,7 +282,16 @@ class OrderController extends Controller
             return response()->json(['message' => 'Order not found'], 404);
         }
 
+        Gate::authorize('delete', $order);
+
         DB::transaction(function () use ($order) {
+            OrderLog::create([
+                'order_id' => $order->id,
+                'previous_owner_id' => $order->user_id,
+                'performed_by' => auth()->id(),
+                'action' => 'deleted',
+            ]);
+
             // Restore stock quantities
             foreach ($order->items as $item) {
                 $stock = \App\Models\Stock::where('product_name', $item->serial_no)->where('product_size', $item->size)->first();
@@ -237,8 +303,8 @@ class OrderController extends Controller
             $order->delete();
         });
 
-        \Illuminate\Support\Facades\Cache::increment('order_cache_version');
-        \Illuminate\Support\Facades\Cache::increment('stock_cache_version');
+        \Illuminate\Support\Facades\Cache::put('order_cache_version', microtime(true));
+        \Illuminate\Support\Facades\Cache::put('stock_cache_version', microtime(true));
 
         return response()->json(['message' => 'Order deleted successfully']);
     }

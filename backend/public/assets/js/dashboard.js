@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // If no token, redirect to login
     if (!token) {
-        window.location.href = 'login';
+        window.location.href = '/login';
         return;
     }
 
@@ -24,11 +24,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         unauthorizedNavs.forEach(el => el.remove());
 
         // Hide unauthorized dashboard cards (Stock Alert and Total Parties)
-        const stockAlertCard = document.querySelector('.dashboard-cards a[href="stock"]');
-        if (stockAlertCard) stockAlertCard.style.display = 'none';
-
-        const totalPartiesCard = document.querySelector('.dashboard-cards a[href="party"]');
-        if (totalPartiesCard) totalPartiesCard.style.display = 'none';
+        const adminOnlyCards = document.querySelectorAll('.admin-only-card');
+        adminOnlyCards.forEach(el => el.style.display = 'none');
+        
+        // Show staff only cards
+        const staffOnlyCards = document.querySelectorAll('.staff-only-card');
+        staffOnlyCards.forEach(el => el.style.display = 'block');
 
         // Hide Low Stock Details card
         const lowStockDetailsContainer = document.getElementById('lowStockDetailsContainer');
@@ -55,6 +56,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const pendingOrdersCount = document.getElementById('pendingOrdersCount');
     const lowStockCountVal = document.getElementById('lowStockCountVal');
     const totalPartiesCount = document.getElementById('totalPartiesCount');
+    const completedOrdersCount = document.getElementById('completedOrdersCount');
+    const cancelledOrdersCount = document.getElementById('cancelledOrdersCount');
     const recentOrdersBody = document.getElementById('recentOrdersBody');
     const lowStockDetailsContainer = document.getElementById('lowStockDetailsContainer');
 
@@ -158,6 +161,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 lowStockCountVal.textContent = count > 0 ? `${count} Items` : '0 Items';
                 lowStockCountVal.style.color = count > 0 ? 'var(--error-color)' : '#10b981';
                 totalPartiesCount.textContent = data.total_parties !== undefined ? data.total_parties : 0;
+                
+                if (completedOrdersCount) completedOrdersCount.textContent = data.completed_orders !== undefined ? data.completed_orders : 0;
+                if (cancelledOrdersCount) cancelledOrdersCount.textContent = data.cancelled_orders !== undefined ? data.cancelled_orders : 0;
+
                 renderRecentOrders(data.recent_orders || []);
                 renderLowStockDetails(data.low_stock_items || []);
             } catch (e) {
@@ -190,6 +197,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Populate Total Parties
                 totalPartiesCount.textContent = data.total_parties !== undefined ? data.total_parties : 0;
 
+                // Populate Staff Cards
+                if (completedOrdersCount) completedOrdersCount.textContent = data.completed_orders !== undefined ? data.completed_orders : 0;
+                if (cancelledOrdersCount) cancelledOrdersCount.textContent = data.cancelled_orders !== undefined ? data.cancelled_orders : 0;
+
                 // Render Recent Orders
                 renderRecentOrders(data.recent_orders || []);
 
@@ -213,6 +224,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         pendingOrdersCount.textContent = 'Error';
         lowStockCountVal.textContent = 'Error';
         totalPartiesCount.textContent = 'Error';
+        if (completedOrdersCount) completedOrdersCount.textContent = 'Error';
+        if (cancelledOrdersCount) cancelledOrdersCount.textContent = 'Error';
         recentOrdersBody.innerHTML = `<tr><td colspan="4" class="text-center" style="padding: 24px; color: var(--error-color);">Error loading recent orders</td></tr>`;
         lowStockDetailsContainer.innerHTML = `<div style="text-align: center; padding: 24px; color: var(--error-color);">Error loading low stock details</div>`;
     }
@@ -312,8 +325,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     } catch (error) {
                         console.error('Error logging out:', error);
                     } finally {
-                        localStorage.removeItem('api_token');
-                        window.location.href = 'login';
+                        localStorage.removeItem('api_token'); localStorage.removeItem('user_role'); localStorage.removeItem('user_name');
+                        window.location.href = '/login';
                     }
                 });
             }
@@ -323,8 +336,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             // Token invalid or expired
             console.warn('Session expired or invalid token');
-            localStorage.removeItem('api_token');
-            window.location.href = 'login';
+            localStorage.removeItem('api_token'); localStorage.removeItem('user_role'); localStorage.removeItem('user_name');
+            window.location.href = '/login';
         }
     } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -345,8 +358,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error('Error logging out:', error);
         } finally {
             // Always clear token and redirect, even if API call fails
-            localStorage.removeItem('api_token');
-            window.location.href = 'login';
+            localStorage.removeItem('api_token'); localStorage.removeItem('user_role'); localStorage.removeItem('user_name');
+            window.location.href = '/login';
         }
     });
 });

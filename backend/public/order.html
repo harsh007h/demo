@@ -124,6 +124,9 @@
                 <input type="text" id="searchOrderInput"
                     placeholder="Search Order by Party, Transport, Mobile or Notes..." style="flex: 1;">
 
+                <select id="filterStaffSelect" style="width: auto; height: 50px; background: rgba(255, 255, 255, 0.1); border: 1px solid var(--glass-border); color: white; border-radius: 12px; padding: 0 16px; display: none;">
+                    <option value="">All Staff</option>
+                </select>
 
                 <button class="btn" id="searchOrderBtn"
                     style="width: auto; margin-top: 0; padding: 0 24px; height: 50px;">
@@ -228,6 +231,13 @@
                             <div class="form-group" style="margin-bottom: 24px;">
                                 <label>Order Date</label>
                                 <input type="date" id="orderDate" required>
+                            </div>
+
+                            <div class="form-group" id="staffAssignGroup" style="margin-bottom: 24px; display: none;">
+                                <label>Assign To Staff</label>
+                                <select id="assignedStaff">
+                                    <option value="" disabled selected>Select Staff</option>
+                                </select>
                             </div>
 
                             <h3 style="margin-bottom: 24px; font-size: 18px; font-weight: 600; color: white;">Transport
@@ -341,6 +351,7 @@
 
     <script src="./assets/js/notifications.js"></script>
     <script src="./assets/js/order.js"></script>
+    <script src="./assets/js/logout.js"></script>
 </body>
 
 </html>

@@ -7,12 +7,12 @@ const userRole = localStorage.getItem('user_role');
 
 // Page authorization check
 if (!token) {
-    window.location.href = 'login';
+    window.location.href = '/login';
 }
 
 if (userRole !== 'Admin') {
     alert('Access denied. Staff cannot access Transport Management.');
-    window.location.href = 'dashboard';
+    window.location.href = '/dashboard';
 }
 
 const headers = {
@@ -126,10 +126,10 @@ async function loadTransports(page = 1, search = '') {
             renderTable(transports, data.from || 1);
             renderPagination(data);
         } else if (response.status === 401) {
-            localStorage.removeItem('api_token');
+            localStorage.removeItem('api_token'); localStorage.removeItem('user_role'); localStorage.removeItem('user_name');
             localStorage.removeItem('user_role');
             localStorage.removeItem('user_name');
-            window.location.href = 'login';
+            window.location.href = '/login';
         } else {
             showToast('Failed to load transports', 'error');
         }
@@ -433,10 +433,10 @@ logoutBtn.addEventListener('click', async () => {
     } catch (error) {
         console.error('Error logging out:', error);
     } finally {
-        localStorage.removeItem('api_token');
+        localStorage.removeItem('api_token'); localStorage.removeItem('user_role'); localStorage.removeItem('user_name');
         localStorage.removeItem('user_role');
         localStorage.removeItem('user_name');
-        window.location.href = 'login';
+        window.location.href = '/login';
     }
 });
 

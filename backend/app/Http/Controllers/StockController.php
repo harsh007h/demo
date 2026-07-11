@@ -56,7 +56,7 @@ class StockController extends Controller
         }
 
         $stock = Stock::create($validated);
-        \Illuminate\Support\Facades\Cache::increment('stock_cache_version');
+        \Illuminate\Support\Facades\Cache::put('stock_cache_version', microtime(true));
         return response()->json($stock, 201);
     }
 
@@ -94,7 +94,7 @@ class StockController extends Controller
         }
 
         $stock->update($validated);
-        \Illuminate\Support\Facades\Cache::increment('stock_cache_version');
+        \Illuminate\Support\Facades\Cache::put('stock_cache_version', microtime(true));
         return response()->json($stock);
     }
 
@@ -105,7 +105,7 @@ class StockController extends Controller
     {
         $stock = Stock::findOrFail($id);
         $stock->delete();
-        \Illuminate\Support\Facades\Cache::increment('stock_cache_version');
+        \Illuminate\Support\Facades\Cache::put('stock_cache_version', microtime(true));
         return response()->json(null, 204);
     }
 

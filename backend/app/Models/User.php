@@ -91,4 +91,12 @@ class User extends Authenticatable
     {
         $this->attributes['status'] = $value ? ucfirst(strtolower($value)) : 'Active';
     }
+
+    /**
+     * Get the orders for the user.
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 }

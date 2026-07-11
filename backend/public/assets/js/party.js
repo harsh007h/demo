@@ -7,13 +7,13 @@ const userRole = localStorage.getItem('user_role');
 
 // Redirect to login if no token
 if (!token) {
-    window.location.href = 'login';
+    window.location.href = '/login';
 }
 
 // Redirect to dashboard if user is not Admin
 if (userRole !== 'Admin') {
     alert('Access denied. Staff cannot access Party Management.');
-    window.location.href = 'dashboard';
+    window.location.href = '/dashboard';
 }
 
 const headers = {
@@ -138,8 +138,8 @@ async function loadParties(page = 1, search = '') {
             renderTable(parties);
             renderPagination(data);
         } else if (response.status === 401) {
-            localStorage.removeItem('api_token');
-            window.location.href = 'login';
+            localStorage.removeItem('api_token'); localStorage.removeItem('user_role'); localStorage.removeItem('user_name');
+            window.location.href = '/login';
         } else {
             showToast('Failed to load parties', 'error');
         }

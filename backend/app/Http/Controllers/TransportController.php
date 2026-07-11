@@ -43,7 +43,7 @@ class TransportController extends Controller
         ]);
 
         $transport = Transport::create($validated);
-        \Illuminate\Support\Facades\Cache::increment('transport_cache_version');
+        \Illuminate\Support\Facades\Cache::put('transport_cache_version', microtime(true));
         return response()->json($transport, 201);
     }
 
@@ -68,7 +68,7 @@ class TransportController extends Controller
         ]);
 
         $transport->update($validated);
-        \Illuminate\Support\Facades\Cache::increment('transport_cache_version');
+        \Illuminate\Support\Facades\Cache::put('transport_cache_version', microtime(true));
         return response()->json($transport);
     }
 
@@ -79,7 +79,7 @@ class TransportController extends Controller
     {
         $transport = Transport::findOrFail($id);
         $transport->delete();
-        \Illuminate\Support\Facades\Cache::increment('transport_cache_version');
+        \Illuminate\Support\Facades\Cache::put('transport_cache_version', microtime(true));
         return response()->json(null, 204);
     }
 }

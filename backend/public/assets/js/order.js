@@ -3,7 +3,7 @@ const token = localStorage.getItem('api_token');
 
 // Redirect to login if no token
 if (!token) {
-    window.location.href = 'login';
+    window.location.href = '/login';
 }
 
 const headers = {
@@ -124,8 +124,8 @@ async function loadParties() {
             // Initialize custom searchable dropdown
             renderCustomPartyDropdown(parties);
         } else if (response.status === 401) {
-            localStorage.removeItem('api_token');
-            window.location.href = 'login';
+            localStorage.removeItem('api_token'); localStorage.removeItem('user_role'); localStorage.removeItem('user_name');
+            window.location.href = '/login';
         }
     } catch (error) {
         console.error('Error fetching parties:', error);
@@ -497,7 +497,9 @@ function clearOrdersCache() {
 
 // Fetch and Render Orders Table with Stale-While-Revalidate caching
 async function loadOrders(page = 1, search = '', status = '') {
-    const cacheKey = `orders_cache_p${page}_s${search}_st${status}`;
+    const filterStaff = document.getElementById('filterStaffSelect');
+    const staffId = filterStaff && filterStaff.value ? filterStaff.value : '';
+    const cacheKey = `orders_cache_p${page}_s${search}_st${status}_u${staffId}`;
     const cachedData = sessionStorage.getItem(cacheKey);
     
     // 0ms instant render from cache if available
@@ -529,6 +531,9 @@ async function loadOrders(page = 1, search = '', status = '') {
         if (status) {
             url += `&status=${encodeURIComponent(status)}`;
         }
+        if (staffId) {
+            url += `&user_id=${encodeURIComponent(staffId)}`;
+        }
 
         const response = await fetch(url, { headers });
         if (response.ok) {
@@ -542,8 +547,8 @@ async function loadOrders(page = 1, search = '', status = '') {
             renderTable(orders);
             renderPagination(data);
         } else if (response.status === 401) {
-            localStorage.removeItem('api_token');
-            window.location.href = 'login';
+            localStorage.removeItem('api_token'); localStorage.removeItem('user_role'); localStorage.removeItem('user_name');
+            window.location.href = '/login';
         } else {
             showToast('Failed to load orders', 'error');
         }
@@ -564,6 +569,14 @@ function renderTable(data) {
         orderTableBody.innerHTML = `<tr><td colspan="4" class="text-center">No orders found</td></tr>`;
         return;
     }
+    const userRole = localStorage.getItem('user_role');
+    const theadTr = document.querySelector('.custom-table thead tr');
+    if (userRole === 'Admin' && !document.getElementById('assignedToTh')) {
+        const th = document.createElement('th');
+        th.id = 'assignedToTh';
+        th.textContent = 'Assigned To';
+        theadTr.insertBefore(th, theadTr.lastElementChild);
+    }
     
     data.forEach(order => {
         const tr = document.createElement('tr');
@@ -582,6 +595,12 @@ function renderTable(data) {
             formattedDate = `${day}-${month}-${year}`;
         } catch(e) {}
 
+        let assignedToHtml = '';
+        if (userRole === 'Admin') {
+            const staffName = order.user ? order.user.name : '-';
+            assignedToHtml = `<td><div style="font-weight: 500; font-size: 14px;">${staffName}</div></td>`;
+        }
+
         tr.innerHTML = `
             <td>
                 <div style="font-weight: 600; color: white;">${partyName}</div>
@@ -592,6 +611,7 @@ function renderTable(data) {
                 <div style="font-weight: 500;">${order.transport_name || '-'}</div>
                 <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">${order.transport_number || '-'}</div>
             </td>
+            ${assignedToHtml}
             <td>
                 <button class="btn-icon edit-btn" onclick="openEditModal(${order.id})">Edit</button>
                 <button class="btn-icon" style="color: #10b981; background: rgba(16, 185, 129, 0.1);" onclick="printOrderDirect(${order.id})">Print</button>
@@ -731,6 +751,11 @@ window.openEditModal = async (id) => {
     
     // Select party and fill fields
     partyNameSelect.value = order.party_id;
+    
+    const assignedStaffSelect = document.getElementById('assignedStaff');
+    if (assignedStaffSelect) {
+        assignedStaffSelect.value = order.user_id || '';
+    }
 
     // Set searchable select value on edit
     const selectedParty = parties.find(p => p.id == order.party_id);
@@ -1068,6 +1093,11 @@ orderForm.addEventListener('submit', async (e) => {
         notes: notesTextarea.value.trim()
     };
     
+    const assignedStaffSelect = document.getElementById('assignedStaff');
+    if (assignedStaffSelect && assignedStaffSelect.value && localStorage.getItem('user_role') === 'Admin') {
+        orderData.user_id = assignedStaffSelect.value;
+    }
+    
     setLoading(saveOrderBtn, true);
     
     try {
@@ -1201,6 +1231,38 @@ document.addEventListener('DOMContentLoaded', () => {
         // Hide '+ Add' party redirect button in the order modal
         const addPartyRedirectBtn = document.getElementById('addPartyRedirectBtn');
         if (addPartyRedirectBtn) addPartyRedirectBtn.style.display = 'none';
+    } else {
+        document.getElementById('staffAssignGroup').style.display = 'block';
+        document.getElementById('filterStaffSelect').style.display = 'block';
+        
+        // Fetch staff users
+        fetch(`${API_URL}/users`, { headers })
+            .then(res => res.json())
+            .then(data => {
+                const staffSelect = document.getElementById('assignedStaff');
+                const filterSelect = document.getElementById('filterStaffSelect');
+                data.data.forEach(u => {
+                    if (u.role !== 'Admin') {
+                        const opt1 = document.createElement('option');
+                        opt1.value = u.id;
+                        opt1.textContent = u.name;
+                        staffSelect.appendChild(opt1);
+                        
+                        const opt2 = document.createElement('option');
+                        opt2.value = u.id;
+                        opt2.textContent = u.name;
+                        filterSelect.appendChild(opt2);
+                    }
+                });
+            })
+            .catch(err => console.error('Error fetching users:', err));
+            
+        const filterStaffSelect = document.getElementById('filterStaffSelect');
+        if (filterStaffSelect) {
+            filterStaffSelect.addEventListener('change', () => {
+                handleFilterSearch();
+            });
+        }
     }
     
     // Load orders first to render the table instantly

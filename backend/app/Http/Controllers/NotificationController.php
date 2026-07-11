@@ -31,7 +31,7 @@ class NotificationController extends Controller
         $notification->is_read = true;
         $notification->save();
 
-        \Illuminate\Support\Facades\Cache::increment('notification_cache_version');
+        \Illuminate\Support\Facades\Cache::put('notification_cache_version', microtime(true));
 
         return response()->json($notification);
     }
@@ -44,7 +44,7 @@ class NotificationController extends Controller
         $notification = Notification::findOrFail($id);
         $notification->delete();
 
-        \Illuminate\Support\Facades\Cache::increment('notification_cache_version');
+        \Illuminate\Support\Facades\Cache::put('notification_cache_version', microtime(true));
 
         return response()->json(['message' => 'Notification deleted successfully']);
     }

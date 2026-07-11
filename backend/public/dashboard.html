@@ -132,16 +132,24 @@
                     <h3>Pending Orders</h3>
                     <div class="value" id="pendingOrdersCount">Loading...</div>
                 </div>
-                <a href="stock" class="card glass-card"
+                <a href="stock" class="card glass-card admin-only-card"
                     style="text-decoration: none; cursor: pointer; transition: all 0.3s ease;">
                     <h3>Stock Alert</h3>
                     <div class="value" id="lowStockCountVal" style="color: var(--error-color);">Loading...</div>
                 </a>
-                <a href="party" class="card glass-card"
+                <a href="party" class="card glass-card admin-only-card"
                     style="text-decoration: none; cursor: pointer; transition: all 0.3s ease;">
                     <h3>Total Parties</h3>
                     <div class="value" id="totalPartiesCount">Loading...</div>
                 </a>
+                <div class="card glass-card staff-only-card" style="display: none;">
+                    <h3>Completed Orders</h3>
+                    <div class="value" id="completedOrdersCount">Loading...</div>
+                </div>
+                <div class="card glass-card staff-only-card" style="display: none;">
+                    <h3>Cancelled Orders</h3>
+                    <div class="value" id="cancelledOrdersCount">Loading...</div>
+                </div>
             </div>
 
             <!-- Dashboard Grid for Recent Items & Alerts -->

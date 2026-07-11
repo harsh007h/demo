@@ -7,12 +7,12 @@ const userRole = localStorage.getItem('user_role');
 
 // Page authorization check
 if (!token) {
-    window.location.href = 'login';
+    window.location.href = '/login';
 }
 
 if (userRole !== 'Admin') {
     alert('Access denied. Staff cannot access User Management.');
-    window.location.href = 'dashboard';
+    window.location.href = '/dashboard';
 }
 
 const dashboardContent = document.getElementById('dashboardContent');
@@ -121,14 +121,14 @@ async function loadUsers(page = 1, search = '') {
             renderTable(users);
             renderPagination(data);
         } else if (response.status === 401) {
-            localStorage.removeItem('api_token');
+            localStorage.removeItem('api_token'); localStorage.removeItem('user_role'); localStorage.removeItem('user_name');
             localStorage.removeItem('user_role');
             localStorage.removeItem('user_name');
-            window.location.href = 'login';
+            window.location.href = '/login';
         } else if (response.status === 403) {
             showToast('Access Denied: You do not have permissions to manage users.', 'error');
             setTimeout(() => {
-                window.location.href = 'dashboard';
+                window.location.href = '/dashboard';
             }, 1500);
         } else {
             showToast('Failed to load users', 'error');
@@ -438,10 +438,10 @@ logoutBtn.addEventListener('click', async () => {
         console.error('Error logging out:', error);
     } finally {
         // Clear all cached keys
-        localStorage.removeItem('api_token');
+        localStorage.removeItem('api_token'); localStorage.removeItem('user_role'); localStorage.removeItem('user_name');
         localStorage.removeItem('user_role');
         localStorage.removeItem('user_name');
-        window.location.href = 'login';
+        window.location.href = '/login';
     }
 });
 

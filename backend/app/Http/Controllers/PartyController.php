@@ -43,7 +43,7 @@ class PartyController extends Controller
         ]);
 
         $party = Party::create($validated);
-        \Illuminate\Support\Facades\Cache::increment('party_cache_version');
+        \Illuminate\Support\Facades\Cache::put('party_cache_version', microtime(true));
         return response()->json($party, 201);
     }
 
@@ -67,7 +67,7 @@ class PartyController extends Controller
         ]);
 
         $party->update($validated);
-        \Illuminate\Support\Facades\Cache::increment('party_cache_version');
+        \Illuminate\Support\Facades\Cache::put('party_cache_version', microtime(true));
         return response()->json($party);
     }
 
@@ -75,7 +75,7 @@ class PartyController extends Controller
     {
         $party = Party::findOrFail($id);
         $party->delete();
-        \Illuminate\Support\Facades\Cache::increment('party_cache_version');
+        \Illuminate\Support\Facades\Cache::put('party_cache_version', microtime(true));
         return response()->json(null, 204);
     }
 }

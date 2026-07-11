@@ -56,7 +56,7 @@ class UserController extends Controller
 
         $user = User::create($validated);
 
-        \Illuminate\Support\Facades\Cache::increment('user_cache_version');
+        \Illuminate\Support\Facades\Cache::put('user_cache_version', microtime(true));
 
         return response()->json($user, 201);
     }
@@ -108,7 +108,7 @@ class UserController extends Controller
 
         $user->update($validated);
 
-        \Illuminate\Support\Facades\Cache::increment('user_cache_version');
+        \Illuminate\Support\Facades\Cache::put('user_cache_version', microtime(true));
 
         return response()->json($user);
     }
@@ -129,7 +129,7 @@ class UserController extends Controller
 
         $user->delete();
 
-        \Illuminate\Support\Facades\Cache::increment('user_cache_version');
+        \Illuminate\Support\Facades\Cache::put('user_cache_version', microtime(true));
 
         return response()->json(null, 204);
     }

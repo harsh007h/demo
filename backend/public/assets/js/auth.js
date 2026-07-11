@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check if already logged in
     const token = localStorage.getItem('api_token');
     if (token) {
-        window.location.href = 'dashboard';
+        window.location.href = '/dashboard';
         return;
     }
 
@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.setItem('user_name', data.user.name);
                     showToast('Login successful! Redirecting...', 'success');
                     setTimeout(() => {
-                        window.location.href = 'dashboard';
+                        window.location.href = '/dashboard';
                     }, 800);
                 } else {
                     errorMessage.textContent = data.message || 'Invalid credentials. Please try again.';
@@ -343,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.setItem('user_name', data.user.name);
                     showToast('OTP verified successfully! Redirecting...', 'success');
                     setTimeout(() => {
-                        window.location.href = 'dashboard';
+                        window.location.href = '/dashboard';
                     }, 800);
                 } else {
                     errorMessage.textContent = data.message || 'Invalid OTP. Please try again.';
